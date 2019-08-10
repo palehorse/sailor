@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+/*
+|--------------------------------------------------------------------------
+| Run The Sailor Application
+|--------------------------------------------------------------------------
+*/
+
+require_once __DIR__ . '/bootstrap.php';
+
+use Symfony\Component\Console\Application;
+use Sailor\Core\Loaders\MethodLoader;
+
+$namespace = 'Sailor\\Commands\\';
+$commands = glob(__DIR__ . '/Commands/' . '{*.php}', GLOB_BRACE);
+
+$app = new Application();
+
+if (!empty($commands)) {
+    foreach ($commands as $cmd) {
+        $class = $namespace . basename($cmd, '.php');
+        $parameters = MethodLoader::create($class, '__construct')
+                                  ->resolve()
+                                  ->injectValues()
+                                  ->getSerializedParameters();
+        
+        $app->add((new \ReflectionClass($class))->newInstanceArgs($parameters));
+    }
+    $app->run();
+}
