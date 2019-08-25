@@ -1,6 +1,6 @@
 <?php
 
-use Forshot\Core\Route;
+use Sailor\Core\Route;
 use Slim\App;
 
 Route::get('/', function() {
