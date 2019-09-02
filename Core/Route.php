@@ -48,11 +48,6 @@ class Route
 		}
 	}
 
-	public static function redirect($target, $status=302)
-	{
-		return self::$app->redirect('', $target, $status);
-	}
-
 	public static function get($uri, $Callable)
 	{
 		return self::pass('get', $uri, $Callable);
