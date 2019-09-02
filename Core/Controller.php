@@ -4,7 +4,8 @@ namespace Sailor\Core;
 
 class Controller
 {
-	private static $namespace = 'Sailor\\Controllers\\';
+	const CONTROLLERS_NAMESPACE = 'Sailor\\Controllers\\';
+
 	protected $request;
 	protected $response;
 	protected $view;
@@ -19,7 +20,7 @@ class Controller
 
 	public static function getNamespace()
 	{
-		return self::$namespace;
+		return self::CONTROLLERS_NAMESPACE;
 	}
 
 	public function __construct($request, $response)
