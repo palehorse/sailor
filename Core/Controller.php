@@ -18,11 +18,6 @@ class Controller
 		return $ReflectionClass->newInstanceArgs([$request, $response]);
 	}
 
-	public static function getNamespace()
-	{
-		return self::CONTROLLERS_NAMESPACE;
-	}
-
 	public function __construct($request, $response)
 	{
 		$this->request = $request;

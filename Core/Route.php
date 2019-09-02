@@ -76,7 +76,7 @@ class Route
 		}
 
 		return @call_user_func([self::$app, $method], $uri, function($request, $response, $args) use ($Callable) {
-			$Callable = !is_string($Callable) ? $Callable : Controller::getNamespace() . $Callable;
+			$Callable = !is_string($Callable) ? $Callable : Controller::CONTROLLERS_NAMESPACE . $Callable;
 
 			if (!is_string($Callable) && is_callable($Callable)) {
 				return call_user_func_array($Callable, $args);
