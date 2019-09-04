@@ -2,6 +2,8 @@
 
 namespace Sailor\Utility;
 
+use Sailor\Core\Route as Router;
+
 class Route
 {
     public static function version($filename)
@@ -10,5 +12,10 @@ class Route
 			$filename = preg_replace('/^(.*)\.(css|js)/', '$1-'. str_replace('.', '', microtime(true)) . '.$2', $filename);
 		}
 		return $filename;
+	}
+
+	public static function pathFor($name) 
+	{
+		return Router::pathFor($name);
 	}
 }

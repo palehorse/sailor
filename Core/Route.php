@@ -40,12 +40,24 @@ class Route
 		};
 	}
 
+	public static function getLogger()
+	{
+		return self::$app->getContainer()->get('logger');
+	}
+
 	public static function loadRoutes() 
 	{
 		$files = self::glob();
 		foreach ($files as $file) {
 			RouteLoader::create(RouteFile::create($file))->resolve();
 		}
+	}
+
+	public static function pathFor($name)
+	{
+		return self::$app->getContainer()
+						 ->get('router')
+						 ->pathFor($name);
 	}
 
 	public static function get($uri, $Callable)
