@@ -8,6 +8,7 @@ use Sailor\Core\Loaders\RouteLoader;
 use Sailor\Core\Files\RouteFile;
 use Slim\App;
 use Sailor\Core\Loaders\ViewLoader;
+use Twig\Template;
 
 class Route
 {
@@ -114,6 +115,38 @@ class Route
 				return self::execute($parameters);
 			}
 		});
+	}
+
+	public static function notFound($template, $title, $message, $desc)
+	{
+		$view = ViewLoader::create()->resolve();
+		$params = [
+			'title' => $title,
+			'message' => $message,
+			'desc' => $desc,
+		];
+		$container = self::$app->getContainer();
+		$container['notFoundHandler'] = function($c) use ($view, $template, $params) {
+			return function ($request, $response) use ($c, $view, $template, $params) {
+				return $view->render($response->withStatus(404), $template, $params);
+			};
+		};
+	}
+
+	public static function error($template, $title, $message, $desc)
+	{
+		$view = ViewLoader::create()->resolve();
+		$params = [
+			'title' => $title,
+			'message' => $message,
+			'desc' => $desc,
+		];
+		$container = self::$app->getContainer();
+		$container['errorHandler'] = function($c) use ($view, $template, $params) {
+			return function ($request, $response) use ($c, $view, $template, $params) {
+				return $view->render($response->withStatus(500), $template, $params);
+			};
+		};
 	}
 
 	private static function execute($parameters=[])
