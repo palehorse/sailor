@@ -5,8 +5,8 @@ namespace Pussle\ORM;
 use \PDO;
 use Sailor\Core\LoggerFactory as Logger;
 use Sailor\Utility\Arr;
-use Sailor\Processors\DatabaseProcessor;
-use Sailor\Processors\SQLProcessor;
+use Pussle\Processors\DatabaseProcessor;
+use Pussle\Processors\SQLProcessor;
 
 class Table
 {
