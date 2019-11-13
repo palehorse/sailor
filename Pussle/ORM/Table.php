@@ -8,6 +8,8 @@ use Sailor\Utility\Arr;
 use Pussle\Processors\DatabaseProcessor;
 use Pussle\Processors\SQLProcessor;
 
+
+
 class Table
 {
     protected $table;
@@ -15,13 +17,11 @@ class Table
     protected $countField;
     protected $columns = [];
     protected $bind = [];
-    protected $DatabaseProcessor;
-    protected $SQLProcessor;
     public function __construct()
     {
         $config = require __DIR__ . '/../config.php';
-        $this->DatabaseProcessor = new DatabaseProcessor($config);
-        $this->SQLProcessor = new SQLProcessor($this->table);
+        DatabaseProcessor::init($config);
+        SQLProcessor::setTable($this->table);
         $this->fetchColumns();
     }
 
@@ -37,7 +37,7 @@ class Table
     {
         if (isset($this->columns[$name])) {
             $this->columns[$name] = $this->bind[$name] = $value;
-            $this->SQLProcessor->addFields($name);
+            SQLProcessor::addFields($name);
             $this->bind[$name] = $value;
         }
     }
@@ -45,10 +45,8 @@ class Table
     protected function fetchColumns()
     {
         $sql = "SELECT COLUMN_NAME FROM Information_Schema.COLUMNS WHERE TABLE_NAME='$this->table'";
-        $this->DatabaseProcessor
-             ->prepare($sql)
-             ->execute();
-        $columns = $this->DatabaseProcessor->fetchAll(DatabaseProcessor::FETCH_ASSOC);
+        DatabaseProcessor::execute($sql);
+        $columns = DatabaseProcessor::fetchAll(DatabaseProcessor::FETCH_ASSOC);
         foreach ($columns as $row) {
             $this->columns[$row['COLUMN_NAME']] = '';
         }
@@ -67,19 +65,18 @@ class Table
     public function select($fields)
     {
         if (Arr::isSingleDimension($fields)) {
-            $this->SQLProcessor->addFields($fields);
+            SQLProcessor::addFields($fields);
         }
 
         if (is_string($fields)) {
             if ($fields == '*') {
-                $this->SQLProcessor->addFields(array_keys($this->columns));
+                SQLProcessor::addFields(array_keys($this->columns));
             } else {
-                $this->SQLProcessor->addFields($fields);
+                SQLProcessor::addFields($fields);
             }
         }
 
-        $this->SQLProcessor
-             ->setCommand('SELECT');
+        SQLProcessor::setCommand('SELECT');
         
         return $this;
     }
@@ -114,7 +111,7 @@ class Table
             $gate = array_shift($clause);
         }
 
-        $this->SQLProcessor->pushAND([$equations, $gate]);
+        SQLProcessor::pushAND([$equations, $gate]);
         return $this;
     }
 
@@ -153,7 +150,7 @@ class Table
             $gate = array_shift($clause);
         }
 
-        $this->SQLProcessor->pushOR([$equations, $gate]);
+        SQLProcessor::pushOR([$equations, $gate]);
         return $this;
     }
 
@@ -180,7 +177,7 @@ class Table
             $gate = array_shift($clause);
         }
 
-        $this->SQLProcessor->pushAND([$equations, $gate]);
+        SQLProcessor::pushAND([$equations, $gate]);
         return $this;
     }
 
@@ -207,112 +204,94 @@ class Table
             $gate = array_shift($clause);
         }
 
-        $this->SQLProcessor->pushOR([$equations, $gate]);
+        SQLProcessor::pushOR([$equations, $gate]);
         return $this;
     }
 
     public function order($field, $orderMode=SQLProcessor::ORDER_ASC)
     {
-        $this->SQLProcessor->pushOrder($field, $orderMode);
+        SQLProcessor::pushOrder($field, $orderMode);
     }
 
     public function limit($limit)
     {
-        $this->SQLProcessor->pushLimit($limit);
+        SQLProcessor::pushLimit($limit);
     }
 
     public function count()
     {
-        $sql = $this->SQLProcessor
-                    ->setCommand('COUNT')
-                    ->resolve();
+        SQLProcessor::setCommand('COUNT');
+        $sql = SQLProcessor::resolve();
 
-        $this->DatabaseProcessor
-             ->prepare($sql)
-             ->bind($this->bind)
-             ->execute();
+        DatabaseProcessor::execute($sql, $this->bind);
                
         $this->bind = [];
-        $this->SQLProcessor->clear();
-        return $this->DatabaseProcessor->fetchCount();
+        SQLProcessor::clear();
+        return DatabaseProcessor::fetchCount();
     }
 
     public function save()
     {
-        $sql = $this->SQLProcessor
-                    ->setCommand('UPDATE')
-                    ->resolve();
+        SQLProcessor::setCommand('UPDATE');
+        $sql = SQLProcessor::resolve();
 
-        $this->DatabaseProcessor
-             ->prepare($sql)
-             ->bind($this->bind)
-             ->execute();
+        DatabaseProcessor::execute($sql, $this->bind);
         
         $this->bind = [];
-        $this->SQLProcessor->clear();
+        SQLProcessor::clear();
     }
 
     public function insert()
     {
-        $sql = $this->SQLProcessor
-                    ->setCommand('INSERT INTO')
-                    ->resolve();
+        SQLProcessor::setCommand('INSERT INTO');
+        SQLProcessor::resolve();
 
-        $this->DatabaseProcessor
-             ->prepare($sql)
-             ->bind($this->bind)
-             ->execute();
+        DatabaseProcessor::execute($sql, $this->bind);
 
         $this->bind = [];
-        $this->SQLProcessor->clear();
-        return $this->DatabaseProcessor->fetch();
+        SQLProcessor::clear();
+        return DatabaseProcessor::lastInsertId();
+        
     }
 
     public function delete()
     {
-        $sql = $this->SQLProcessor
-                    ->setCommand('DELETE')
-                    ->resolve();
+        SQLProcessor::setCommand('DELETE');
+        $sql = SQLProcessor::resolve();
                     
-        $this->DatabaseProcessor
-             ->prepare($sql)
-             ->bind($this->bind)
-             ->execute();
+        DatabaseProcessor::execute($sql, $this->bind);
 
         $this->bind = [];
-        $this->SQLProcessor->clear();
+        SQLProcessor::clear();
     }
 
     public function fetch()
     {
-        $sql = $this->SQLProcessor->resolve();
-        $result = $this->DatabaseProcessor
-                       ->prepare($sql)
-                       ->bind($this->bind)
-                       ->execute();
+        $sql = SQLProcessor::resolve();
+        $result = DatabaseProcessor::execute($sql, $this->bind);
 
         $this->bind = [];
-        $this->SQLProcessor->clear();
+        SQLProcessor::clear();
         if (!$result) {
             return false;
         }
-        return $this->DatabaseProcessor->fetch();
+        $fetchData = DatabaseProcessor::fetch();
+        foreach ($fetchData as $name => $value) {
+            $this->columns[$name] = $value;
+        }
+        return $this;
     }
 
     public function fetchAll()
     {
-        $sql = $this->SQLProcessor->resolve();
-
-        $result = $this->DatabaseProcessor
-                       ->prepare($sql)
-                       ->bind($this->bind)
-                       ->execute();
+        $sql = SQLProcessor::resolve();
+        $result = DatabaseProcessor::execute($sql, $this->bind);
                        
         $this->bind = [];
-        $this->SQLProcessor->clear();
+        SQLProcessor::clear();
         if (!$result) {
             return false;
         }
-        return $this->DatabaseProcessor->fetchAll();
+        return DatabaseProcessor::fetchAll();
     }
 }

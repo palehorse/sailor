@@ -9,27 +9,26 @@ class SQLProcessor
     const ORDER_ASC  = 'ASC';
     const ORDER_DESC = 'DESC';
 
-    private $table;
-    private $fields = [];
-    private $command;
-    private $where = [];
-    private $order = [];
-    private $limit;
+    private static $table;
+    private static $fields = [];
+    private static $command;
+    private static $where = [];
+    private static $order = [];
+    private static $limit;
 
-    public function __construct($table)
+    public static function setTable($table)
     {
-        $this->table = $table;
+        self::$table = $table;
     }
 
-    public function setCommand($command)
+    public static function setCommand($command)
     {
         if (in_array(strtoupper($command), ['SELECT', 'COUNT', 'INSERT INTO', 'UPDATE', 'DELETE'])) {
-            $this->command = strtoupper($command);
+            self::$command = strtoupper($command);
         }
-        return $this;
     }
 
-    public function addFields($fields)
+    public static function addFields($fields)
     {
         if (is_string($fields)) {
             $fields = explode(',', preg_replace('/ /', '', $fields));
@@ -37,137 +36,139 @@ class SQLProcessor
 
         if (!empty($fields) && Arr::isSingleDimension($fields)) {
             foreach ($fields as $name) {
-                if (!in_array($name, $this->fields)) {
-                    $this->fields[] = $name;
+                if (!in_array($name, self::$fields)) {
+                    self::$fields[] = $name;
                 }
             }
         }
-        
-        return $this;
     }
 
-    public function pushAND($clause)
+    public static function pushAND($clause)
     {
         if (Arr::isSingleDimension($clause)) {
-            return $this;
+            return;
         }
 
-        if (!empty($this->where)) {
-            $this->where[] = "AND";
+        if (!empty(self::$where)) {
+            self::$where[] = "AND";
         }
-        $this->where[] = $this->translate($clause);
-        return $this;
+        self::$where[] = self::translate($clause);
     }
 
-    public function pushOR($clause)
+    public static function pushOR($clause)
     {
         if (Arr::isSingleDimension($clause)) {
-            return $this;
+            return;
         }
-        if (!empty($this->where)) {
-            $this->where[] = "OR";
+        if (!empty(self::$where)) {
+            self::$where[] = "OR";
         }
-        $this->where[] = $this->translate($clause);
-        return $this;
+        self::$where[] = self::translate($clause);
     }
 
-    public function pushOrder($field, $orderMode=self::ORDER_ASC)
+    public static function pushOrder($field, $orderMode=self::ORDER_ASC)
     {
         $orderMode = ($orderMode === self::ORDER_DESC) ? $orderMode : self::ORDER_ASC;
-        $this->order[$field] = $orderMode;
-        return $this;
+        self::$order[$field] = $orderMode;
     }
 
-    public function pushLimit($limit)
+    public static function pushLimit($limit)
     {
         if (is_int($limit)) {
-            $this->limit = $limit;
+            self::$limit = $limit;
         }
-        return $this;
     }
 
-    public function resolve()
+    public static function resolve()
     {
-        return $this->composite();
+        return self::composite();
     }
 
-    private function composite()
+    public static function clear()
     {
-        switch ($this->command) {
+        self::$command = null;
+        self::$fields = [];
+        self::$where = [];
+        self::$order = [];
+    }
+
+    private static function composite()
+    {
+        switch (self::$command) {
             case "SELECT":
-                $sqlSlots = [$this->command];
+                $sqlSlots = [self::$command];
                 $sqlSlots[] = implode(", ", array_map(function($value) {
                     if ($value !== '' && $value !== false) {
                         return "`" . $value . "`";
                     }    
-                }, $this->fields));
+                }, self::$fields));
                 
                 $sqlSlots[] = "FROM";
-                $sqlSlots[] = "`" . $this->table . "`";
-                if (!empty($this->order)) {
+                $sqlSlots[] = "`" . self::$table . "`";
+                if (!empty(self::$order)) {
                     $sqlSlots[] = "ORDER BY";
                     $order = [];
-                    foreach ($this->order as $field => $mode) {
+                    foreach (self::$order as $field => $mode) {
                         $order[] = "`" . $field . "` " . $mode;
                     }
                     $sqlSlots[] = implode(', ', $order);
                 }
 
-                if (!empty($this->limit)) {
-                    $sqlSlots[] = "LIMIT " . $this->limit;
+                if (!empty(self::$limit)) {
+                    $sqlSlots[] = "LIMIT " . self::$limit;
                 }
                 
                 break;
             case 'COUNT':
                 $sqlSlots[] = "SELECT";
-                $sqlSlots[] = "COUNT(`" . $this->fields[0] . "`) AS count_" . $this->fields[0];
+                $sqlSlots[] = "COUNT(`" . self::$fields[0] . "`) AS count_" . self::$fields[0];
                 $sqlSlots[] = "FROM";
-                $sqlSlots[] = "`" . $this->table . "`";
-                if (!empty($this->limit)) {
-                    $sqlSlots[] = "LIMIT " . $this->limit;
+                $sqlSlots[] = "`" . self::$table . "`";
+                if (!empty(self::$limit)) {
+                    $sqlSlots[] = "LIMIT " . self::$limit;
                 }
                 break;
             case 'INSERT INTO':
-                $sqlSlots = [$this->command];
-                $sqlSlots[] = "`" . $this->table . "`";
+                $sqlSlots = [self::$command];
+                $sqlSlots[] = "`" . self::$table . "`";
                 $sqlSlots[] = "(" . implode(", ", array_map(function($value) {
                     if ($value !== '' && $value !== false && !is_null($value)) {    
                         return "`" . $value . "`";
                     }
-                }, $this->fields)) . ")";
+                }, self::$fields)) . ")";
                 $sqlSlots[] = "VALUES";
                 $sqlSlots[] = "(" . implode(", ", array_map(function($value) {
                     if ($value !== '' && $value !== false && !is_null($value)) {
                         return ":" . $value;
                     }
                     return null;
-                }, $this->fields)) . ")";
+                }, self::$fields)) . ")";
                 break;
             case "UPDATE":
-                $sqlSlots = [$this->command];
-                $sqlSlots[] = "`" . $this->table . "`";
+                $sqlSlots = [self::$command];
+                $sqlSlots[] = "`" . self::$table . "`";
                 $sqlSlots[] = "SET";
                 $sqlSlots[] = implode(', ', array_map(function($name) {
                     return "`" . $name . "`=:" . $name;
-                }, $this->fields));
+                }, self::$fields));
                 break;
             case "DELETE":
-                $sqlSlots = [$this->command];
+                $sqlSlots = [self::$command];
                 $sqlSlots[] = "FROM";
-                $sqlSlots[] = "`" . $this->table . "`";
+                $sqlSlots[] = "`" . self::$table . "`";
                 break;
             default:
                 return null;
         }
 
-        if (!empty($this->where)) {
+        if (!empty(self::$where)) {
             $sqlSlots[] = "WHERE";
-            $sqlSlots[] = implode(" ", $this->where);
+            $sqlSlots[] = implode(" ", self::$where);
         }
         return implode(" ", $sqlSlots);
     }
 
-    private function translate($clause)
+    private static function translate($clause)
     {
         $fields = array_shift($clause);
         $gate   = array_shift($clause);
@@ -191,13 +192,5 @@ class SQLProcessor
             return "(" . implode($gate, $snippet) . ")";
         }
         return implode($gate, $snippet);
-    }
-
-    public function clear()
-    {
-        $this->command = null;
-        $this->fields = [];
-        $this->where = [];
-        $this->order = [];
     }
 }

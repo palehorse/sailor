@@ -142,8 +142,10 @@ class Route
 			'desc' => $desc,
 		];
 		$container = self::$app->getContainer();
-		$container['errorHandler'] = function($c) use ($view, $template, $params) {
-			return function ($request, $response) use ($c, $view, $template, $params) {
+		$logger = $container['logger'];
+		$container['errorHandler'] = function($c) use ($view, $template, $params, $logger) {
+			return function ($request, $response, $e) use ($c, $view, $template, $params, $logger) {
+				$logger->error($e->getMessage());
 				return $view->render($response->withStatus(500), $template, $params);
 			};
 		};

@@ -10,61 +10,40 @@ class DatabaseProcessor
 {
     const FETCH_ASSOC = PDO::FETCH_ASSOC;
 
-    private $conn;
-    private $stmt;
-    public function __construct($config)
+    private static $conn;
+    private static $stmt;
+    public static function init($config)
     {
         try {
-            $this->conn = $this->createConnection($config);
-            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            self::$conn = self::createConnection($config);
+            self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (\PDOException $e) {
             Logger::error('Database connection failed: ' . $e->getMessage());
         }
     }
 
-    public function prepare($sql)
+    public static function execute($sql, $params=null)
     {
         try {
-            if (!empty($this->conn)) {
-                $this->stmt = $this->conn->prepare($sql);
+            if (!empty(self::$conn)) {
+                self::$stmt = self::$conn->prepare($sql);
             }
         } catch (\PDOException $e) {
             Logger::error('Prepare SQL failed: ' . $e->getMessage());
         }
-        return $this;
-    }
 
-    public function bind($params, &$value=null)
-    {
         try {
             if (is_array($params) && !empty($params)) {
                 foreach ($params as $name => &$param) {
-                    $this->stmt->bindParam($name, $param);
+                    self::$stmt->bindParam($name, $param);
                 }
-            }
-
-            if (is_string($params) && !is_null($value)) {
-                $this->stmt->bindParam($params, $value);
             }
         } catch (\PDOException $e) {
             Logger::error('Binding params failed: ' . $e->getMessage());
         }
-        return $this;
-    }
-
-    public function execute($params=null)
-    {
-        $list = [];
-        if (is_array($params) && !empty($params)) {
-            foreach ($params as $param) {
-                if ($param !== '' && $param !== false && !is_null($param)) {
-                    $list[] = $param;
-                }
-            }
-        }
 
         try {
-            $this->stmt->execute(!empty($list) ? $list : null);
+            self::$stmt->execute();
         } catch (\PDOException $e) {
             Logger::error($e->getMessage());
             return false;
@@ -72,10 +51,15 @@ class DatabaseProcessor
         return true;
     }
 
-    public function fetch($dataType=self::FETCH_ASSOC)
+    public static function lastInsertId()
+    {
+        return self::$conn->lastInsertId();
+    }
+
+    public static function fetch($dataType=self::FETCH_ASSOC)
     {
         try {
-            $rs = $this->stmt->fetch($dataType);
+            $rs = self::$stmt->fetch($dataType);
         } catch (\PDOException $e) {
             Logger::error('Fetch Failed: ' . $e->getMessage());
             return false;
@@ -83,27 +67,27 @@ class DatabaseProcessor
         return !empty($rs) ? $rs : [];
     }
 
-    public function fetchAll($dataType=self::FETCH_ASSOC)
+    public static function fetchAll($dataType=self::FETCH_ASSOC)
     {
         try {
-            $rs = $this->stmt->fetchAll($dataType);
+            $rs = self::$stmt->fetchAll($dataType);
         } catch (\PDOException $e) {
             Logger::error('Fetch Failed: ' . $e->getMessage());
         }
         return !empty($rs) ? $rs : [];
     }
 
-    public function fetchCount()
+    public static function fetchCount()
     {
         try {
-            $rs = $this->stmt->fetch(PDO::FETCH_COLUMN);
+            $rs = self::$stmt->fetch(PDO::FETCH_COLUMN);
         } catch (\PDOException $e) {
             Logger::error('Fetch Failed: ' . $e->getMessage());
         }
         return $rs;
     }
 
-    private function createConnection($config)
+    private static function createConnection($config)
     {
         $setting = [];
         $setting['{db}']       = isset($config['db']) ? $config['db'] : 'mysql';
