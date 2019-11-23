@@ -244,7 +244,7 @@ class Table
     public function insert()
     {
         SQLProcessor::setCommand('INSERT INTO');
-        SQLProcessor::resolve();
+        $sql = SQLProcessor::resolve();
 
         DatabaseProcessor::execute($sql, $this->bind);
 
@@ -258,7 +258,6 @@ class Table
     {
         SQLProcessor::setCommand('DELETE');
         $sql = SQLProcessor::resolve();
-                    
         DatabaseProcessor::execute($sql, $this->bind);
 
         $this->bind = [];
@@ -276,6 +275,10 @@ class Table
             return false;
         }
         $fetchData = DatabaseProcessor::fetch();
+        if (is_null($fetchData)) {
+            return null;
+        }
+
         foreach ($fetchData as $name => $value) {
             $this->columns[$name] = $value;
         }
@@ -292,6 +295,20 @@ class Table
         if (!$result) {
             return false;
         }
-        return DatabaseProcessor::fetchAll();
+
+        $fetchData = DatabaseProcessor::fetchAll();
+        if (is_null($fetchData)) {
+            return null;
+        }
+
+        $data = [];
+        foreach ($fetchData as $row) {
+            $object = new self;
+            foreach ($row as $name => $value) {
+                $object->$name = $value;
+            }
+            $data[] = $object;
+        }
+        return $data;
     }
 }

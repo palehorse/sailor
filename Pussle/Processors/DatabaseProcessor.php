@@ -64,7 +64,7 @@ class DatabaseProcessor
             Logger::error('Fetch Failed: ' . $e->getMessage());
             return false;
         }
-        return !empty($rs) ? $rs : [];
+        return !empty($rs) ? $rs : null;
     }
 
     public static function fetchAll($dataType=self::FETCH_ASSOC)
@@ -74,7 +74,7 @@ class DatabaseProcessor
         } catch (\PDOException $e) {
             Logger::error('Fetch Failed: ' . $e->getMessage());
         }
-        return !empty($rs) ? $rs : [];
+        return !empty($rs) ? $rs : null;
     }
 
     public static function fetchCount()
