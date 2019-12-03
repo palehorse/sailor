@@ -3,33 +3,67 @@ namespace Sailor\Utility\Curl;
 
 class Response
 {
-    /** @var string */
-    private $response;
+    const OK = 200;
 
-    /** @var boolean */
-    private $isSuccess;
+    const MOVED_PERMANENTLY = 301;
+    const FOUND             = 302;
+    const NOT_MODIFIED      = 304;
+    
+    const BAD_REQUEST        = 400;
+    const UNAUTHORIZED       = 401;
+    const FORBIDDEN          = 403;
+    const NOT_FOUND          = 404;
+    const METHOD_NOT_ALLOWED = 405;
+
+    const INTERNAL_SERVER_ERR = 500;
+    const BAD_GATEWAY         = 502;
+    const GATEWAY_TIMEOUT     = 504;
+
+    const HTTP_MSG = [
+        '200' => 'OK',
+        '301' => 'Moved Permanently',
+        '302' => 'Found',
+        '304' => 'Not Modified',
+        '400' => 'Bad Request',
+        '401' => 'Unauthorized',
+        '403' => 'Forbidden',
+        '405' => 'Method Not Allowed',
+        '500' => 'Internal Server Error',
+        '502' => 'Bad Gateway',
+        '504' => 'Gateway Timeout',
+    ];
+
+    /** @var string */
+    private $httpStatus;
+
+    /** @var string */
+    private $header;
 
     /** @var array */
-    private $header;
+    private $formattedHeader;
 
     /** @var string */
     private $body;
 
+    /** @var array */
+    private $formattedBody;
+
     /**
-     * @param resource $ch 
-     * @param resource $response
+     * @param resource $ch
      */
     public function __construct($ch, $response)
     {
-        $this->curl = $ch;
-        $this->isSuccess = true;
-        if (empty($response)) {
-            $this->isSuccess = false;
-            return;
-        }
+        $info = curl_getinfo($ch);
+        
+        $this->httpStatus = $info['http_code'];
+        $this->info = $info;
         $this->response = $response;
-        $this->header = $this->getHeaderData();
-        $this->body = $this->getBodyData();
+
+        $this->header = substr($response, 0, $info['header_size']);
+        $this->formattedHeader = $this->getFormattedHeader($this->header);
+
+        $this->body = substr($response, $info['header_size']);
+        $this->formattedBody = json_decode($this->body, true) ?: null;
     }
 
     /**
@@ -37,15 +71,93 @@ class Response
      */
     public function isSuccess()
     {
-        return $this->isSuccess;
+        return $this->httpStatus == self::OK;
     }
 
     /**
-     * @return resource the raw response content
+     * @return boolean
      */
-    public function getRaw()
+    public function isMovedPermanently()
     {
-        return ($this->isSuccess) ? $this->response : null;
+        return $this->httpStatus == self::MOVED_PERMANENTLY;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isRedirected()
+    {
+        return $this->httpStatus == self::FOUND;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function notModified()
+    {
+        return $this->httpStatus == self::NOT_MODIFIED;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isBadRequest()
+    {
+        return $this->httpStatus == self::BAD_REQUEST;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isUnauthorized()
+    {
+        return $this->httpStatus == self::UNAUTHORIZED;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isForbidden()
+    {
+        return $this->httpStatus == self::FORBIDDEN;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function notFound()
+    {
+        return $this->httpStatus == self::NOT_FOUND;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function notAllowedMethod()
+    {
+        return $this->httpStatus == self::METHOD_NOT_ALLOWED;
+    }
+
+    /** @return string */
+    public function getHttpMessage()
+    {
+        return self::HTTP_MSG[$this->httpStatus];
+    }
+
+    /**
+     * @return string
+     */
+    public function getRawHeader()
+    {
+        return $this->header;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRawBody()
+    {
+        return $this->body;
     }
 
     /**
@@ -54,26 +166,7 @@ class Response
      */
     public function getHeader($name)
     {
-        if (!$this->isSuccess) {
-            return null;
-        }
-        return isset($this->header[$name]) ? $this->header[$name] : null;
-    }
-
-    /**
-     * @return array all of the header data
-     */
-    public function getHeaders()
-    {
-        return ($this->isSuccess) ? $this->header : null;
-    }
-
-    /**
-     * @return array the body content of the response | string
-     */
-    public function getBody()
-    {
-        return ($this->isSuccess) ? $this->body : null;
+        return isset($this->formattedHeader[$name]) ? $this->formattedHeader[$name] : null;
     }
 
     /**
@@ -81,31 +174,16 @@ class Response
      */
     public function isJSON()
     {
-        if (!$this->isSuccess) {
-            return null;
-        }
-        return $this->getHeader('Content-Type') == 'application/json' && is_array($this->body);
+        return !is_null($this->formattedBody);
     }
 
     public function __get($name)
     {
-        if (!$this->isSuccess) {
-            return null;
-        }
-
-        if (isset($this->body[$name])) {
-            return $this->body[$name];
-        }
-        return null;
+        return isset($this->formattedBody[$name]) ? $this->formattedBody[$name] : null;
     }
 
-    private function getHeaderData()
+    private function getFormattedHeader($header)
     {
-        if (!$this->isSuccess) {
-            return null;
-        }
-
-        $header = substr($this->response, 0, curl_getinfo($this->curl, CURLINFO_HEADER_SIZE));
         preg_match_all('/([\w\-]+): ([\w\-\/]+)/', $header, $matches);
         
         $headers = [];
@@ -117,18 +195,5 @@ class Response
         }
 
         return $headers;
-    }
-
-    private function getBodyData()
-    {
-        if (!$this->isSuccess) {
-            return null;
-        }
-        
-        $body = substr($this->response, curl_getinfo($this->curl, CURLINFO_HEADER_SIZE)) ?: null;
-        if ($this->getHeader('Content-Type') == 'application/json') {
-            return json_decode($body, true);
-        }
-        return $body;
     }
 }
