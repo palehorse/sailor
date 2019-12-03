@@ -4,7 +4,6 @@ namespace Pussle\Processors;
 
 use \PDO;
 use Sailor\Core\LoggerFactory as Logger;
-use Pussle\DataType\MySQLDataType;
 
 class DatabaseProcessor
 {
@@ -49,6 +48,21 @@ class DatabaseProcessor
             return false;
         }
         return true;
+    }
+
+    public static function beginTransaction()
+    {
+        return self::$conn->beginTransaction();
+    }
+
+    public static function commit()
+    {
+        return self::$conn->commit();
+    }
+
+    public static function rollback()
+    {
+        return self::$conn->rollback();
     }
 
     public static function lastInsertId()

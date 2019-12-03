@@ -13,7 +13,6 @@ use Pussle\Processors\SQLProcessor;
 class Table
 {
     protected $table;
-    protected $conn;
     protected $countField;
     protected $columns = [];
     protected $bind = [];
@@ -40,6 +39,21 @@ class Table
             SQLProcessor::addFields($name);
             $this->bind[$name] = $value;
         }
+    }
+
+    public function beginTransaction()
+    {
+        return DatabaseProcessor::beginTransaction();
+    }
+
+    public function commit()
+    {
+        return DatabaseProcessor::commit();
+    }
+
+    public function rollback()
+    {
+        return DatabaseProcessor::rollback();
     }
 
     protected function fetchColumns()
@@ -302,8 +316,9 @@ class Table
         }
 
         $data = [];
+        $class = get_class($this);
         foreach ($fetchData as $row) {
-            $object = new self;
+            $object = new $class;
             foreach ($row as $name => $value) {
                 $object->$name = $value;
             }
