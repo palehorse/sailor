@@ -8,8 +8,9 @@ class Route
 {
     public static function version($filename)
 	{
-		if (preg_match('/^.*\.css|js$/', $filename)) {
-			$filename = preg_replace('/^(.*)\.(css|js)/', '$1-'. str_replace('.', '', microtime(true)) . '.$2', $filename);
+		$ext = 'css|js|jpg|jpeg|png|gif';
+		if (preg_match('/^.*\.(' . $ext . ')$/', $filename)) {
+			$filename = preg_replace('/^(.*)\.(' . $ext . ')/', '$1-'. str_replace('.', '', microtime(true)) . '.$2', $filename);
 		}
 		return $filename;
 	}
