@@ -8,7 +8,7 @@ use \RuntimeException;
 
 class ConfigLoader implements Loader
 {
-	private static $configfile;
+	const FORMAT = '/^([A-Z_]+)=([\w\-_\/\.@]+)$/';
 
 	private $file;
 	private $content;
@@ -24,7 +24,6 @@ class ConfigLoader implements Loader
 
 	public function __construct(ConfigFile $configfile)
 	{
-		$this->format = '/^([A-Z_]+)=([\w\-_\/\.@]+)$/';
 		$this->file = $configfile;
 		$this->content = $this->file->getContent();
 		$this->data = [];
@@ -44,16 +43,9 @@ class ConfigLoader implements Loader
 	private function parse()
 	{
 		foreach ($this->content as $idx => $row) {
-			preg_match($this->format, $row, $matches);
+			preg_match(self::FORMAT, $row, $matches);
 			list($original, $key, $value) = $matches;
 			$this->data[$key] = $value;
-		}
-	}
-
-	public function validate()
-	{
-		if (!preg_match($this->format, $this->content)) {
-			return false;
 		}
 	}
 }

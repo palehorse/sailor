@@ -10,7 +10,6 @@ class ConfigFile implements File
 	const EXIT_ON_ERROR = 1;
 	const IGNORE_ON_ERROR = 2;
 
-	private $basepath = __DIR__ . '/../config';
 	private $handler;
 	private $dir;
 	private $name;
