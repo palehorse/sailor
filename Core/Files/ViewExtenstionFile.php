@@ -3,19 +3,16 @@ namespace Sailor\Core\Files;
 
 use Sailor\Core\Interfaces\File;
 use RuntimeException;
-use Sailor\Core\Controller;
 
-class ControllerFile implements File
+class ViewExtensionFile implements File
 {
 	const EXT = 'php';
-	const CONTROLLER_NAMESPACE = 'Sailor\\Controllers\\';
+	const EXTENSION_NAMESPACE = 'Sailor\\Extensions\\Twig\\';
 
 	private $dir;
 	private $basename;
 	private $name;
 	private $ext;
-	private $request;
-	private $response;
 
 	public static function create()
 	{
@@ -24,13 +21,11 @@ class ControllerFile implements File
 			throw new RuntimeException('The path of the file is required.');
 		}
 
-		
-
-		list($path, $request, $response) = $argv;
-		return new ControllerFile($path, $request, $response);
+		$path = array_shift($argv);
+		return new ViewExtensionFile($path);
     }
     
-    public function __construct($path, $request, $response) 
+    public function __construct($path) 
 	{
 		if (!file_exists($path)) {
 			throw new RuntimeException('The file: ' . $path . ' does not exist');
@@ -45,9 +40,6 @@ class ControllerFile implements File
 		$this->basename = $info['basename'];
 		$this->name = $info['filename'];
 		$this->ext = $info['extension'];
-
-		$this->request = $request;
-		$this->response = $response;
 	}
 
 	/**
@@ -84,8 +76,7 @@ class ControllerFile implements File
 
 	public function resolve()
 	{
-		$class = self::CONTROLLER_NAMESPACE . $this->name;
-		$ReflectionClass = new \ReflectionClass($class);
-		return $ReflectionClass->newInstanceArgs([$this->request, $this->response]);
+		$class = self::EXTENSION_NAMESPACE . $this->name;
+		return new $class;
 	}
 }

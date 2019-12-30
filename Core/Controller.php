@@ -6,8 +6,6 @@ use Slim\Flash\Messages;
 
 class Controller
 {
-	const CONTROLLERS_NAMESPACE = 'Sailor\\Controllers\\';
-
 	protected $request;
 	protected $response;
 	protected $view;
@@ -16,12 +14,6 @@ class Controller
 	protected $getVars;
 	protected $postVars;
 	protected $logger;
-
-	public static function create($class, $request, $response)
-	{
-		$ReflectionClass = new \ReflectionClass($class);
-		return $ReflectionClass->newInstanceArgs([$request, $response]);
-	}
 
 	public function __construct($request, $response)
 	{

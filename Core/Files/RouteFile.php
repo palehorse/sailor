@@ -3,79 +3,79 @@
 namespace Sailor\Core\Files;
 
 use Sailor\Core\Interfaces\File;
+use RuntimeException;
 
 class RouteFile implements File 
 {
-	const EXIT_ON_ERROR = 1;
-	const IGNORE_ON_ERROR = 2;
+	const EXT = 'php';
 
-	private $basepath = __DIR__ . '/../routes';
-	private $handler;
 	private $dir;
+	private $basename;
 	private $name;
-	private $content;
 	private $ext;
-	private $mode;
 
-	public static function create($path)
+	public static function create()
 	{
+		$argv = func_get_args();
+		if (empty($argv) || !is_string($argv[0])) {
+			throw new RuntimeException('The path of the file is required.');
+		}
+
+		$path = array_shift($argv);
 		return new RouteFile($path);
 	}
 
-	public function __construct($path, $mode = self::EXIT_ON_ERROR) 
+	public function __construct($path) 
 	{
-		$this->load($path);
-		$this->mode = $mode;
+		if (!file_exists($path)) {
+			throw new RuntimeException('The file: ' . $path . ' does not exist');
+		}
+
+		$info = pathinfo($path);
+		if ($info['extension'] != self::EXT) {
+			throw new RuntimeException('The file extension must be .' . self::EXT);
+		}
+
+		$this->dir = $info['dirname'];
+		$this->basename = $info['basename'];
+		$this->name = $info['filename'];
+		$this->ext = $info['extension'];
 	}
 
-	public function getName()
-	{
-		return $this->name;
-	}
-
+	/**
+	 * @return string
+	 */
 	public function getDir()
 	{
 		return $this->dir;
 	}
 
-	public function getContent()
+	/**
+	 * @return string
+	 */
+	public function getBaseName()
 	{
-		return $this->content;
+		return $this->basename;
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getName()
+	{
+		return $this->name;
+	}
+
+	/**
+	 * @return string
+	 */
 	public function getExt()
 	{
 		return $this->ext;
 	}
 
-	public function validate($path) 
+	public function resolve()
 	{
-		return preg_match('/\.php$/', $path);
-	}
-
-	private function load($path) 
-	{
-		if (!file_exists($path)) {
-			if ($this->mode == self::EXIT_ON_ERROR) {
-				throw new RuntimeException("File $path does not exist!");
-			} else {
-				return false;
-			}
-		}
-
-		if (!$this->validate($path)) {
-			if ($this->mode == self::EXIT_ON_ERROR) {
-				throw new RuntimeException("File format must be incorrect!");
-			} else {
-				return false;
-			}
-		}
-
-		$pathinfo = pathinfo($path);
-		$this->dir = $pathinfo['dirname'];
-		$this->name = $pathinfo['filename'];
-		$this->ext = $pathinfo['extension'];
-
-		$this->content = $path;
+		include $this->dir . '/' . $this->basename;
 	}
 }

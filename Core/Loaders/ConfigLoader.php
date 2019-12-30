@@ -2,50 +2,35 @@
 
 namespace Sailor\Core\Loaders;
 
-use Sailor\Core\Interfaces\Loader;
+use Sailor\Core\Interfaces\FileLoader;
 use Sailor\Core\Files\ConfigFile;
-use \RuntimeException;
+use Sailor\Core\Interfaces\Loaded;
 
-class ConfigLoader implements Loader
+class ConfigLoader implements FileLoader
 {
-	const FORMAT = '/^([A-Z_]+)=([\w\-_\/\.@]+)$/';
-
-	private $file;
-	private $content;
+	private $configFile;
 	private $data;
 
-	public static function create(ConfigFile $configfile=null)
+	public static function create()
 	{
-		if (is_null($configfile)) {
-			throw new RuntimeException("Missing the ConfigFile");
-		}
-		return new ConfigLoader($configfile);
+		return new ConfigLoader;
 	}
 
-	public function __construct(ConfigFile $configfile)
+	/**
+	 * @param Loaded $configFile
+	 */
+	public function load(Loaded $configFile) 
 	{
-		$this->file = $configfile;
-		$this->content = $this->file->getContent();
-		$this->data = [];
-	}
-
-	public function resolve()
-	{
-		$this->parse();
+		$this->configFile = $configFile;
+		$this->data = $this->configFile->resolve();
 		return $this;
 	}
 
-	public function getData()
+	/**
+	 * @return array
+	 */
+	public function getConfigData()
 	{
 		return $this->data;
-	}
-
-	private function parse()
-	{
-		foreach ($this->content as $idx => $row) {
-			preg_match(self::FORMAT, $row, $matches);
-			list($original, $key, $value) = $matches;
-			$this->data[$key] = $value;
-		}
 	}
 }

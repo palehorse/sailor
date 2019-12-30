@@ -3,48 +3,26 @@
 namespace Sailor\Core\Loaders;
 
 use Sailor\Core\Interfaces\Loader;
-use Sailor\Core\Controller;
-use RuntimeException;
+use Sailor\Core\Interfaces\Loaded;
 
 class ControllerLoader implements Loader
 {
-	private $class;
+	/** @param Controller */
 	private $controller;
-	private $request;
-	private $response;
 
-	public static function create($classname='', 
-								  $request=null, 
-								  $response=null)
+	public static function create()
 	{
-		if (empty($classname)) {
-			throw new RuntimeException("Missing the Class name");
-		}
-
-		if (is_null($request)) {
-			throw new RuntimeException("Missing the Request");
-		}
-
-		if (is_null($response)) {
-			throw new RuntimeException("Missing the Response");
-		}
-
-		return new ControllerLoader($classname, $request, $response);
+		return new ControllerLoader;
 	}
 
-	public function __construct($classname, $request, $response)
+	public function load(Loaded $ControllerFile)
 	{
-		$this->class = $classname;
-		$this->request = $request;
-		$this->response = $response;
+		$this->controller = $ControllerFile->resolve();
+		return $this;
 	}
 
-	public function resolve()
+	public function getController()
 	{
-		$this->controller = Controller::create($this->class, 
-								  			   $this->request, 
-								  			   $this->response);
 		return $this->controller;
-
 	}
 }

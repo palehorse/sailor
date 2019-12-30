@@ -15,7 +15,7 @@ class Config
 		$files = self::glob(self::$path);
 		foreach ($files as $file) {
 			$config = ConfigFile::create($file);
-			self::$data[$config->getName()] = ConfigLoader::create($config)->resolve()->getData();
+			self::$data[$config->getName()] = ConfigLoader::create()->load($config)->getConfigData();
 		}
 	}
 
@@ -27,14 +27,14 @@ class Config
 		}
 
 		if (preg_match('/(\w+)\.(\w+)/', $key, $matches)) {
-			list($original, $name, $subname) = $matches;
+			list($original, $name, $subName) = $matches;
 		} else {
 			$name = $key;
 		}
-
-		if (!empty($subname)) {
+		
+		if (!empty($subName)) {
 			if (isset(self::$data[$name])) {
-				return isset(self::$data[$name][$subname]) ? self::$data[$name][$subname] : null;
+				return isset(self::$data[$name][$subName]) ? self::$data[$name][$subName] : null;
 			}
 			return null;
 		}

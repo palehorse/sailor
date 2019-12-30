@@ -2,17 +2,22 @@
 
 namespace Sailor\Core;
 
+use Sailor\Core\Files\ControllerFile;
 use Sailor\Core\Loaders\ControllerLoader;
 use Sailor\Core\Loaders\MethodLoader;
 use Sailor\Core\Loaders\RouteLoader;
 use Sailor\Core\Files\RouteFile;
+use Sailor\Core\Files\ViewExtensionFile;
 use Slim\App;
 use Sailor\Core\Loaders\ViewLoader;
-use Twig\Template;
+use Sailor\Core\Services\Method;
 
 class Route
 {
-	private static $path = __DIR__ . '/../routes/';
+	const CONTROLLER_PATH = __DIR__ . '/../Controllers';
+	const CONTROLLER_NAMESPACE = 'Sailor\\Controllers\\';
+	const ROUTE_PATH = __DIR__ . '/../routes/';
+
 	private static $controller;
 	private static $action;
 	private static $app;
@@ -50,7 +55,7 @@ class Route
 	{
 		$files = self::glob();
 		foreach ($files as $file) {
-			RouteLoader::create(RouteFile::create($file))->resolve();
+			RouteLoader::create()->load(RouteFile::create($file));
 		}
 	}
 
@@ -89,7 +94,7 @@ class Route
 		}
 
 		return @call_user_func([self::$app, $method], $uri, function($request, $response, $args) use ($Callable) {
-			$Callable = !is_string($Callable) ? $Callable : Controller::CONTROLLERS_NAMESPACE . $Callable;
+			$Callable = !is_string($Callable) ? $Callable : ControllerFile::CONTROLLER_NAMESPACE . $Callable;
 
 			if (!is_string($Callable) && is_callable($Callable)) {
 				return call_user_func_array($Callable, $args);
@@ -98,19 +103,22 @@ class Route
 			if (preg_match("/(.*)::([\w\-]+)/", $Callable, $matches) && is_callable($Callable))
 			{
 				list($raw, $class, $action) = $matches;
-				$ViewLoader = ViewLoader::create();
+				$extensions = glob(__DIR__ . '/../Extensions/Twig/{*.php}', GLOB_BRACE);
+				foreach ($extensions as $ext) {
+					$ViewLoader = ViewLoader::create();
+					$ViewLoader->load(ViewExtensionFile::create($ext));
+				}
 
-				$ControllerLoader = ControllerLoader::create($class, $request, $response);
-				$controller = $ControllerLoader->resolve();
-				$controller->setView($ViewLoader->resolve());
+				$controllerFileName = str_replace(self::CONTROLLER_NAMESPACE, '', $class);
+				$ControllerLoader = ControllerLoader::create()->load(ControllerFile::create(self::CONTROLLER_PATH . '/' . $controllerFileName . '.php', $request, $response));
+				
+				$controller = $ControllerLoader->getController();
+				$controller->setView(ViewLoader::getTwig());
 				
 				self::$controller = $controller;
 				self::$action     = $action;
 
-				$parameters = MethodLoader::create($controller, $action, $args)
-										  ->resolve()
-									      ->injectValues()
-										  ->getSerializedParameters();
+				$parameters = MethodLoader::create()->load(Method::create($class, $action, $args))->getParameterValues();
 				
 				return self::execute($parameters);
 			}
@@ -119,7 +127,7 @@ class Route
 
 	public static function notFound($template, $title, $message, $desc)
 	{
-		$view = ViewLoader::create()->resolve();
+		$view = ViewLoader::getTwig();
 		$params = [
 			'title' => $title,
 			'message' => $message,
@@ -135,7 +143,7 @@ class Route
 
 	public static function error($template, $title, $message, $desc)
 	{
-		$view = ViewLoader::create()->resolve();
+		$view = ViewLoader::getTwig();
 		$params = [
 			'title' => $title,
 			'message' => $message,
@@ -158,6 +166,6 @@ class Route
 
 	private static function glob()
 	{
-		return glob(self::$path . '{*.php}', GLOB_BRACE);
+		return glob(self::ROUTE_PATH . '{*.php}', GLOB_BRACE);
 	}
 }

@@ -2,10 +2,10 @@
 
 namespace Sailor\Core\Interfaces;
 
-Interface File {
-	public static function create($path);
+Interface File extends Loaded {
+	public static function create();
 	public function getName();
+	public function getBaseName();
 	public function getDir();
 	public function getExt();
-	public function validate($path);
 }

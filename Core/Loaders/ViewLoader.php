@@ -2,24 +2,32 @@
 
 namespace Sailor\Core\Loaders;
 
+use Sailor\Core\Interfaces\Loaded;
 use Sailor\Core\Interfaces\Loader;
 use Sailor\Core\Services\View;
+use Slim\Views\Twig;
 
 class ViewLoader implements Loader
 {
-    private $twig;
+    const VIEW_PATH = __DIR__ . '/../../resources/views';
+
+    private static $twig;
     public static function create()
     {
         return new ViewLoader;
     }
 
-    public function __construct()
+    public function load(Loaded $viewExtensionFile)
     {
-        $this->twig = View::create();
+        self::$twig->addExtension($viewExtensionFile->resolve());
     }
 
-    public function resolve()
+    public static function getTwig()
     {
-        return $this->twig;
+        if (empty(self::$twig)) {
+            self::$twig = new Twig(self::VIEW_PATH, []);
+        }
+
+        return self::$twig;
     }
 }
