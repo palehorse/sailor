@@ -3,13 +3,15 @@
 namespace Sailor\Core;
 
 use Slim\Flash\Messages;
+use Sailor\Core\Loaders\HookLoader;
 
 class Controller
 {
 	protected $request;
 	protected $response;
 	protected $view;
-	protected $commonData;
+	protected $hookLoaders = [];
+	protected $commonData = [];
 	protected $flash;
 	protected $getVars;
 	protected $postVars;
@@ -22,10 +24,6 @@ class Controller
 		$this->flash = new Messages;
 		$this->logger = Route::getLogger();
 		$this->parseVars();
-
-		$this->commonData = [
-			'title' => Config::get('project.NAME'),
-		];
 	}
 
 	public function setView($view)
@@ -33,7 +31,19 @@ class Controller
 		$this->view = $view;
 	}
 
-	public function view($file, array $data=[])
+	public function addHookLoader(HookLoader $HookLoader)
+	{
+		$this->hookLoaders[] = $HookLoader;
+	}
+
+	public function runHooks()
+	{
+		foreach ($this->hookLoaders as $HookLoader) {
+			$HookLoader->call($this->commonData);
+		}
+	}
+
+	protected function view($file, array $data=[])
 	{
 		if (!preg_match('/\.php$/', $file)) {
 			$file .= '.php';
@@ -42,7 +52,7 @@ class Controller
 		return $this->view->render($this->response, $file, array_merge($this->commonData, $data));
 	}
 	
-	public function get($name)
+	protected function get($name)
 	{
 		if (isset($this->getVars[$name])) {
 			return $this->getVars[$name];
@@ -50,7 +60,7 @@ class Controller
 		return null;
 	}
 
-	public function post($name)
+	protected function post($name)
 	{
 		if (isset($this->postVars[$name])) {
 			return $this->postVars[$name];
@@ -58,7 +68,7 @@ class Controller
 		return null;
 	}
 
-	public function files($name=null)
+	protected function files($name=null)
 	{
 		if (!is_null($name)) {
 			return isset($_FILES[$name]) ? $_FILES[$name] : null;
@@ -66,7 +76,7 @@ class Controller
 		return $_FILES;
 	}
 
-	public function jsonResponse(array $data=[])
+	protected function jsonResponse(array $data=[])
 	{
 		$this->response->withHeader('Content-type', 'application/json');
 		$this->response->write(json_encode($data));

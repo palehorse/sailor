@@ -3,11 +3,13 @@
 namespace Sailor\Core;
 
 use Sailor\Core\Files\ControllerFile;
+use Sailor\Core\Files\HookFile;
 use Sailor\Core\Loaders\ControllerLoader;
 use Sailor\Core\Loaders\MethodLoader;
 use Sailor\Core\Loaders\RouteLoader;
 use Sailor\Core\Files\RouteFile;
 use Sailor\Core\Files\ViewExtensionFile;
+use Sailor\Core\Loaders\HookLoader;
 use Slim\App;
 use Sailor\Core\Loaders\ViewLoader;
 use Sailor\Core\Services\Method;
@@ -117,6 +119,14 @@ class Route
 				
 				self::$controller = $controller;
 				self::$action     = $action;
+
+				$hooks = glob(__DIR__ . '/../hooks/{*.php}', GLOB_BRACE);
+				foreach ($hooks as $hook) {
+					$HookLoader = HookLoader::create();
+					$HookLoader->load(HookFile::create($hook));
+					$controller->addHookLoader($HookLoader);
+				}
+				$controller->runHooks();
 
 				$parameters = MethodLoader::create()->load(Method::create($class, $action, $args))->getParameterValues();
 				
