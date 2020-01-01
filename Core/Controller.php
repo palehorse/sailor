@@ -11,7 +11,7 @@ class Controller
 	protected $response;
 	protected $view;
 	protected $hookLoaders = [];
-	protected $commonData = [];
+	protected $data = [];
 	protected $flash;
 	protected $getVars;
 	protected $postVars;
@@ -39,7 +39,7 @@ class Controller
 	public function runHooks()
 	{
 		foreach ($this->hookLoaders as $HookLoader) {
-			$HookLoader->call($this->commonData);
+			$HookLoader->call($this->data);
 		}
 	}
 
@@ -49,7 +49,7 @@ class Controller
 			$file .= '.php';
 		}
 
-		return $this->view->render($this->response, $file, array_merge($this->commonData, $data));
+		return $this->view->render($this->response, $file, array_merge($this->data, $data));
 	}
 	
 	protected function get($name)
