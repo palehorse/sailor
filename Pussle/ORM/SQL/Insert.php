@@ -38,7 +38,7 @@ class Insert implements Command
         }
 
         $columns = array_map(function($column) {
-            return sprintf('`%s`', $column);
+            return $column;
         }, $columns);
 
         $sqlComponents = [

@@ -36,11 +36,12 @@ class Join implements Command
         if (!in_array($type, ['JOIN', 'LEFT JOIN', 'RIGHT JOIN'])) {
             throw new RuntimeException($type . ' is invalid');
         }
+ 
         $this->type = $type;
         $this->leftTable = $leftTable;
         $this->rightTable = $rightTable;
         $this->count = $count;
-        $this->on = $on;
+        $this->on = (sizeof(array_filter($on, 'is_array')) > 0) ? $on : [$on];
         $this->where = new Where($where);
         $this->group = $group;
         $this->order = $order;
@@ -121,7 +122,10 @@ class Join implements Command
         }, $this->on);
 
         $count = array_map(function($field) {
-            return sprintf('COUNT(`%s`)', $field);
+            if (is_array($field) && isset($field['as'])) {
+                return sprintf('COUNT(%s) AS %s', $field[0], $field['as']);
+            }
+            return 'COUNT(' . $field . ')';
         }, $this->count);
 
         $sqlComponents = [
@@ -137,7 +141,7 @@ class Join implements Command
             implode('AND', $on),
         ];
 
-        if (!empty($where)) {
+        if (!empty($this->where)) {
             $sqlComponents[] = 'WHERE';
             $sqlComponents[] = $this->where->build();
         }

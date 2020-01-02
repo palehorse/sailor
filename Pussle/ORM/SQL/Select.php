@@ -64,11 +64,14 @@ class Select implements Command
         }
 
         $columns = array_map(function($name) {
-            return sprintf('`%s`', $name);
+            return $name;
         }, array_keys($this->columns));
 
         $count = array_map(function($field) {
-            return sprintf('COUNT(`%s`)', $field);
+            if (is_array($field) && isset($field['as'])) {
+                return sprintf('COUNT(%s) AS %s', $field[0], $field['as']);
+            }
+            return 'COUNT(' . $field . ')';
         }, $this->count);
 
         $sqlComponents = [
