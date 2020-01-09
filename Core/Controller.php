@@ -2,8 +2,10 @@
 
 namespace Sailor\Core;
 
+use ErrorException;
 use Slim\Flash\Messages;
 use Sailor\Core\Loaders\HookLoader;
+use Slim\Exception\NotFoundException;
 
 class Controller
 {
@@ -93,5 +95,15 @@ class Controller
         $this->view('error', [
             'title' => $title, 
             'message' => $message,]);
-    }
+	}
+	
+	protected function notFound()
+	{
+		throw new NotFoundException($this->request, $this->response);
+	}
+
+	protected function error()
+	{
+		throw new ErrorException;
+	}
 }

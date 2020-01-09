@@ -13,6 +13,7 @@ use Sailor\Core\Loaders\HookLoader;
 use Slim\App;
 use Sailor\Core\Loaders\ViewLoader;
 use Sailor\Core\Services\Method;
+use Slim\Views\Twig;
 
 class Route
 {
@@ -23,6 +24,20 @@ class Route
 	private static $controller;
 	private static $action;
 	private static $app;
+
+	private static $notFound = [
+		'template' => 'error.php',
+		'title' => '404',
+		'message' => 'Page Not Found',
+		'desc' => '很抱歉，找不到您所需的頁面<br />請確認您所輸入的網址是否正確',
+	];
+
+	private static $error = [
+		'template' => 'error.php',
+		'title' => '500',
+		'message' => 'Something Wrong',
+		'desc' => '很抱歉，網站或伺服器發生暫時性的系統錯誤<br />我們會盡快修復',
+	];
 
 	public static function setSlimApp(App $app)
 	{
@@ -111,6 +126,10 @@ class Route
 					$ViewLoader->load(ViewExtensionFile::create($ext));
 				}
 
+				$twig = ViewLoader::getTwig();
+				self::setNotFoundHandler($twig);
+				self::setErrorHandler($twig);
+
 				$controllerFileName = str_replace(self::CONTROLLER_NAMESPACE, '', $class);
 				$ControllerLoader = ControllerLoader::create()->load(ControllerFile::create(self::CONTROLLER_PATH . '/' . $controllerFileName . '.php', $request, $response));
 				
@@ -137,34 +156,48 @@ class Route
 
 	public static function notFound($template, $title, $message, $desc)
 	{
-		$view = ViewLoader::getTwig();
-		$params = [
-			'title' => $title,
-			'message' => $message,
-			'desc' => $desc,
-		];
-		$container = self::$app->getContainer();
-		$container['notFoundHandler'] = function($c) use ($view, $template, $params) {
-			return function ($request, $response) use ($c, $view, $template, $params) {
-				return $view->render($response->withStatus(404), $template, $params);
-			};
-		};
+		self::$notFound['template'] = $template;
+		self::$notFound['title'] = $title;
+		self::$notFound['message'] = $message;
+		self::$notFound['desc'] = $desc;
 	}
 
 	public static function error($template, $title, $message, $desc)
 	{
-		$view = ViewLoader::getTwig();
+		self::$error['template'] = $template;
+		self::$error['title'] = $title;
+		self::$error['message'] = $message;
+		self::$error['desc'] = $desc;
+	}
+
+	private static function setNotFoundHandler(Twig $twig)
+	{
+		$template = self::$notFound['template'];
 		$params = [
-			'title' => $title,
-			'message' => $message,
-			'desc' => $desc,
+			'title' => self::$notFound['title'],
+			'message' => self::$notFound['message'],
+			'desc' => self::$notFound['desc'],
 		];
 		$container = self::$app->getContainer();
-		$logger = $container['logger'];
-		$container['errorHandler'] = function($c) use ($view, $template, $params, $logger) {
-			return function ($request, $response, $e) use ($c, $view, $template, $params, $logger) {
-				$logger->error($e->getMessage());
-				return $view->render($response->withStatus(500), $template, $params);
+		$container['notFoundHandler'] = function($c) use ($twig, $template, $params) {
+			return function ($request, $response) use ($twig, $template, $params) {
+				return $twig->render($response->withStatus(404), $template, $params);
+			};
+		};
+	}
+
+	private static function setErrorHandler(Twig $twig)
+	{
+		$template = self::$error['template'];
+		$params = [
+			'title' => self::$error['title'],
+			'message' => self::$error['message'],
+			'desc' => self::$error['desc'],
+		];
+		$container = self::$app->getContainer();
+		$container['errorHandler'] = function($c) use ($twig, $template, $params) {
+			return function ($request, $response) use ($twig, $template, $params) {
+				return $twig->render($response->withStatus(500), $template, $params);
 			};
 		};
 	}

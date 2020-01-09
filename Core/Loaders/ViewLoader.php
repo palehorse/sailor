@@ -14,6 +14,9 @@ class ViewLoader implements Loader
     private static $twig;
     public static function create()
     {
+        if (empty(self::$twig)) {
+            self::$twig = new Twig(self::VIEW_PATH, []);
+        }
         return new ViewLoader;
     }
 
@@ -24,10 +27,6 @@ class ViewLoader implements Loader
 
     public static function getTwig()
     {
-        if (empty(self::$twig)) {
-            self::$twig = new Twig(self::VIEW_PATH, []);
-        }
-
         return self::$twig;
     }
 }
