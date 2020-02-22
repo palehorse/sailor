@@ -3,7 +3,6 @@
 namespace Sailor\Core;
 
 use ErrorException;
-use Slim\Flash\Messages;
 use Sailor\Core\Loaders\HookLoader;
 use Slim\Exception\NotFoundException;
 
@@ -14,7 +13,6 @@ class Controller
 	protected $view;
 	protected $hookLoaders = [];
 	protected $data = [];
-	protected $flash;
 	protected $getVars;
 	protected $postVars;
 	protected $logger;
@@ -23,7 +21,6 @@ class Controller
 	{
 		$this->request = $request;
 		$this->response = $response;
-		$this->flash = new Messages;
 		$this->logger = Route::getLogger();
 		$this->parseVars();
 	}
