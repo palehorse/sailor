@@ -24,3 +24,6 @@ date_default_timezone_set("Asia/Taipei");
 mb_internal_encoding('UTF-8');
 ini_set('session.cookie_path', sprintf('/%s/', Config::get('project.NAME')));
 ini_set('session.cookie_lifetime', 3600); 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
