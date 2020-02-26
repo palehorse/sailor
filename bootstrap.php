@@ -23,6 +23,7 @@ switch (Config::get('project.ENV')) {
 date_default_timezone_set("Asia/Taipei");
 mb_internal_encoding('UTF-8');
 session_start();
-ini_set('session.cookie_path', sprintf('/%s/', Config::get('project.NAME')));
-ini_set('session.cookie_domain', $_SERVER['HTTP_HOST']);
-ini_set('session.cookie_lifetime', 3600); 
+ini_set('session.name', !empty(Config::get('session.NAME')) ? Config::get('session.NAME') : Config::get('project.NAME'));
+ini_set('session.cookie_path', sprintf('/%s/', !empty(Config::get('session.PATH')) ? Config::get('session.PATH') : Config::get('project.NAME')));
+ini_set('session.cookie_domain', !empty(Config::get('session.DOMAIN')) ? Config::get('session.DOMAIN') : $_SERVER['HTTP_HOST']);
+ini_set('session.cookie_lifetime', !empty(Config::get('session.LIFE_TIME')) ? Config::get('session.LIFE_TIME') : 3600); 
