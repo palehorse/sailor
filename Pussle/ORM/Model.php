@@ -29,7 +29,7 @@ class Model
     protected $rightModel;
 
     /** @var array */
-    protected $count = [];
+    protected $funcFields = [];
 
     /** @var Where */
     protected $where;
@@ -148,10 +148,60 @@ class Model
      * @param string $field
      * @return Table
      */
-    public function count($field)
+    public function count($field, $as=null)
     {
-        $this->count[] = $field;
+        $row = ['field' => $field, 'func' => 'COUNT'];
+        if (!empty($as)) {
+            $row['as'] = $as;
+        }
+
+        $this->funcFields[] = $row;
         return $this;
+    }
+
+    /**
+     * @param string $field
+     * @return Table
+     */
+    public function max($field, $as=null)
+    {
+        $row = ['field' => $field, 'func' => 'MAX'];
+        if (!empty($as)) {
+            $row['as'] = $as;
+        }
+
+        $this->funcFields[] = $row;
+        return $this;
+    }
+
+    /**
+     * @param string $field
+     * @return Table
+     */
+    public function sum($field, $as=null)
+    {
+        $row = ['field' => $field, 'func' => 'SUM'];
+        if (!empty($as)) {
+            $row['as'] = $as;
+        }
+
+        $this->funcFields[] = $row;
+        return $this;
+    }
+
+    /**
+     * @param string $field
+     * @return Table
+     */
+    public function avg($field, $as=null)
+    {
+        $row = ['field' => $field, 'func' => 'AVG'];
+        if (!empty($as)) {
+            $row['as'] = $as;
+        }
+
+        $this->funcFields[] = $row;
+        return $this; 
     }
 
     public function insert()
@@ -201,34 +251,32 @@ class Model
         $this->rightModel = $rightModel;
         $leftTable = $this->table;
         $rightTable = $this->rightModel->getTable();
-        $count = array_merge(
-            array_map(function($column) use ($leftTable) {
+        $func = array_merge(
+            (!empty($this->getFuncFields())) ? array_map(function($column) use ($leftTable) {
                 if (!empty($leftTable->getAlias())) {
                     $name = $leftTable->getAlias();
                 } else {
                     $name = $leftTable->getName();
                 }
 
-                if (is_array($column) && isset($column['as'])) {
-                    return [sprintf('%s.%s', $name, $column[0]), 'as' => $column['as']];
-                } else {
-                    return sprintf('%s.%s', $name, $column);
-                }
-            }, $this->getCount()), 
-            array_map(function($column) use ($rightTable) {
+                $field = $column['field'];
+                $funcName = $column['func'];
+                $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+                return sprintf('%s.%s(%s)%s', $name, $funcName, $field, $as);
+            }, $this->getFuncFields()) : [], 
+            (!empty($rightModel->getFuncFields())) ? array_map(function($column) use ($rightTable) {
                 if (!empty($rightTable->getAlias())) {
                     $name = $rightTable->getAlias();
                 } else {
                     $name = $rightTable->getName();
                 }
 
-                if (is_array($column) && isset($column['as'])) {
-                    return [sprintf('%s.%s', $name, $column[0]), 'as' => $column['as']];
-                } else {
-                    return sprintf('%s.%s', $name, $column);
-                }
-            }, $rightModel->getCount()));
-        $this->setCommand($this->createJoin('JOIN', $rightModel->getTable(), $on, $count, $where, $group, $order));
+                $field = $column['field'];
+                $funcName = $column['func'];
+                $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+                return sprintf('%s.%s(%s)%s', $name, $funcName, $field, $as);
+            }, $rightModel->getFuncFields()) : []);
+        $this->setCommand($this->createJoin('JOIN', $rightModel->getTable(), $on, $func, $where, $group, $order));
         return $this;
     }
 
@@ -242,25 +290,33 @@ class Model
         $this->rightModel = $rightModel;
         $leftTable = $this->table;
         $rightTable = $this->rightModel->getTable();
-        $count = array_merge(
-            array_map(function($column) use ($leftTable) {
-
-                if (is_array($column) && isset($column['as'])) {
-                    return [sprintf('%s.%s', $leftTable->getAlias(), $column[0]), 'as' => $column['as']];
+        $func = array_merge(
+            (!empty($this->getFuncFields())) ? array_map(function($column) use ($leftTable) {
+                if (!empty($leftTable->getAlias())) {
+                    $name = $leftTable->getAlias();
                 } else {
-                    return $leftTable->getAlias() . '.' . $column;
+                    $name = $leftTable->getName();
                 }
-            }, $this->getCount()), 
-            array_map(function($column) use ($rightTable) {
 
-                if (is_array($column) && isset($column['as'])) {
-                    return [sprintf('%s.%s', $rightTable->getAlias(), $column[0]), 'as' => $column['as']];
+                $field = $column['field'];
+                $funcName = $column['func'];
+                $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+                return sprintf('%s.%s(%s)%s', $name, $funcName, $field, $as);
+            }, $this->getFuncFields()) : [], 
+            (!empty($rightModel->getFuncFields())) ? array_map(function($column) use ($rightTable) {
+                if (!empty($rightTable->getAlias())) {
+                    $name = $rightTable->getAlias();
                 } else {
-                    return $rightTable->getAlias() . '.' . $column;
+                    $name = $rightTable->getName();
                 }
-            }, $rightModel->getCount()));
 
-        $this->setCommand($this->createJoin('LEFT JOIN', $rightModel->getTable(), $count, $on, $where, $group, $order));
+                $field = $column['field'];
+                $funcName = $column['func'];
+                $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+                return sprintf('%s.%s(%s)%s', $name, $funcName, $field, $as);
+            }, $rightModel->getFuncFields()): []);
+
+        $this->setCommand($this->createJoin('LEFT JOIN', $rightModel->getTable(), $func, $on, $where, $group, $order));
         return $this;
     }
 
@@ -274,25 +330,33 @@ class Model
         $this->rightModel = $rightModel;
         $leftTable = $this->table;
         $rightTable = $this->rightModel->getTable();
-        $count = array_merge(
-            array_map(function($column) use ($leftTable) {
-
-                if (is_array($column) && isset($column['as'])) {
-                    return [sprintf('%s.%s', $leftTable->getAlias(), $column[0]), 'as' => $column['as']];
+        $func = array_merge(
+            (!empty($this->getFuncFields())) ? array_map(function($column) use ($leftTable) {
+                if (!empty($leftTable->getAlias())) {
+                    $name = $leftTable->getAlias();
                 } else {
-                    return $leftTable->getAlias() . '.' . $column;
+                    $name = $leftTable->getName();
                 }
-            }, $this->getCount()), 
-            array_map(function($column) use ($rightTable) {
 
-                if (is_array($column) && isset($column['as'])) {
-                    return [sprintf('%s.%s', $rightTable->getAlias(), $column[0]), 'as' => $column['as']];
+                $field = $column['field'];
+                $funcName = $column['func'];
+                $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+                return sprintf('%s.%s(%s)%s', $name, $funcName, $field, $as);
+            }, $this->getFuncFields()) : [],
+            (!empty($rightModel->getFuncFields())) ? array_map(function($column) use ($rightTable) {
+                if (!empty($rightTable->getAlias())) {
+                    $name = $rightTable->getAlias();
                 } else {
-                    return $rightTable->getAlias() . '.' . $column;
+                    $name = $rightTable->getName();
                 }
-            }, $rightModel->getCount()));
 
-        $this->setCommand($this->createJoin('RIGHT JOIN', $rightModel->getTable(), $count, $on, $where, $group, $order));
+                $field = $column['field'];
+                $funcName = $column['func'];
+                $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+                return sprintf('%s.%s(%s)%s', $name, $funcName, $field, $as);
+            }, $rightModel->getFuncFields()): []);
+
+        $this->setCommand($this->createJoin('RIGHT JOIN', $rightModel->getTable(), $func, $on, $where, $group, $order));
         return $this;
     }
 
@@ -377,9 +441,9 @@ class Model
         return $this->where;
     }
 
-    public function getCount()
+    public function getFuncFields()
     {
-        return $this->count;
+        return $this->funcFields;
     }
 
     public function fetch()
@@ -456,7 +520,7 @@ class Model
 
     protected function createSelect()
     {
-        return new Select($this->table, $this->count, $this->group, $this->order);
+        return new Select($this->table, $this->funcFields, $this->group, $this->order);
     }
 
     protected function createInsert()
@@ -480,10 +544,10 @@ class Model
         return new Delete($this->table);
     }
 
-    protected function createJoin($type, Table $rightTable, array $on, array $count, array $where = [], array $group = [], array $order = [])
+    protected function createJoin($type, Table $rightTable, array $on, array $func, array $where = [], array $group = [], array $order = [])
     {
         $leftTable = $this->table;
-        return new Join($type, $leftTable, $rightTable, $on, $count, $where, $group, $order);
+        return new Join($type, $leftTable, $rightTable, $on, $func, $where, $group, $order);
     }
 
     protected function createSelf()

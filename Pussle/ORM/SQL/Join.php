@@ -20,7 +20,7 @@ class Join implements Command
     private $on = [];
 
     /** @var array */
-    private $count = [];
+    private $func = [];
 
     /** @var array */
     private $where = [];
@@ -31,7 +31,7 @@ class Join implements Command
     /** @var array */
     private $order = [];
 
-    public function __construct($type, Table $leftTable, Table $rightTable, array $on, array $count = [], array $where = [], array $group = [], array $order = [])
+    public function __construct($type, Table $leftTable, Table $rightTable, array $on, array $func = [], array $where = [], array $group = [], array $order = [])
     {
         if (!in_array($type, ['JOIN', 'LEFT JOIN', 'RIGHT JOIN'])) {
             throw new RuntimeException($type . ' is invalid');
@@ -40,7 +40,7 @@ class Join implements Command
         $this->type = $type;
         $this->leftTable = $leftTable;
         $this->rightTable = $rightTable;
-        $this->count = $count;
+        $this->func = $func;
         $this->on = (sizeof(array_filter($on, 'is_array')) > 0) ? $on : [$on];
         $this->where = new Where($where);
         $this->group = $group;
@@ -121,22 +121,15 @@ class Join implements Command
             return sprintf('%s=%s', $leftTableName . '.' . $leftColumn, $rightTableName . '.' . $rightColumn);
         }, $this->on);
 
-        $count = array_map(function($field) {
-            if (is_array($field) && isset($field['as'])) {
-                return sprintf('COUNT(%s) AS %s', $field[0], $field['as']);
-            }
-            return 'COUNT(' . $field . ')';
-        }, $this->count);
-
         $sqlComponents = [
             'SELECT',
-            implode(',', $leftTableColumnNames) . ',' . implode(',', $rightTableColumnNames) . (!empty($count) ? ',' . implode(',', $count) : ''),
+            implode(',', $leftTableColumnNames) . ',' . implode(',', $rightTableColumnNames) . (!empty($this->func) ? ',' . implode(',', $this->func) : ''),
             'FROM',
             '`' . $leftTable->getName() . '`',
-            !empty($leftTable->getAlias()) ? 'AS ' . $leftTable->getAlias() : '',
+            !empty($leftTable->getAlias()) ? ' AS ' . $leftTable->getAlias() : '',
             $this->type,
             '`' . $rightTable->getName() . '`',
-            !empty($rightTable->getAlias()) ? 'AS ' . $rightTable->getAlias() : '',
+            !empty($rightTable->getAlias()) ? ' AS ' . $rightTable->getAlias() : '',
             'ON',
             implode('AND', $on),
         ];

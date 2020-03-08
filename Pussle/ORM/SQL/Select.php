@@ -12,7 +12,7 @@ class Select implements Command
     private $source;
 
     /** @var array */
-    private $count = [];
+    private $funcFields = [];
 
     /** @var array */
     private $group = [];
@@ -23,11 +23,11 @@ class Select implements Command
     /** @var Where */
     private $where;
 
-    public function __construct($source, array $count = [], array $group = [], array $order = [])
+    public function __construct($source, array $funcFields = [], array $group = [], array $order = [])
     {
         $this->source = $source;
         $this->columns = $this->source->getColumns();
-        $this->count = $count;
+        $this->funcFields = $funcFields;
         $this->group = $group;
         $this->order = $order;
     }
@@ -67,16 +67,16 @@ class Select implements Command
             return $name;
         }, array_keys($this->columns));
 
-        $count = array_map(function($field) {
-            if (is_array($field) && isset($field['as'])) {
-                return sprintf('COUNT(%s) AS %s', $field[0], $field['as']);
-            }
-            return 'COUNT(' . $field . ')';
-        }, $this->count);
+        $funcFields = (!empty($this->funcFields)) ? array_map(function($column) {
+            $field = $column['field'];
+            $funcName = $column['func'];
+            $as = !empty($column['as']) ? ' AS ' . $column['as'] : '';
+            return sprintf('%s(%s)%s', $funcName, $field, $as);
+        }, $this->funcFields) : [];
 
         $sqlComponents = [
             'SELECT',
-            implode(',', $columns) . (!empty($count) ? ',' . implode(',', $count) : ''),
+            implode(',', $columns) . (!empty($funcFields) ? ',' . implode(',', $funcFields) : ''),
             'FROM',
             '`' . $name . '`',
         ];
