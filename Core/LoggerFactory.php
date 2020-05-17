@@ -28,7 +28,7 @@ class LoggerFactory
         }
 
         if (!is_dir($path)) {
-            throw new RuntimeException('The log directory does not exist!');
+            throw new RuntimeException('The log directory ' . $path . ' does not exist!');
         }
 
         $logger = new Logger($name);
