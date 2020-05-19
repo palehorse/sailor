@@ -10,9 +10,8 @@ module.exports = (function(SRC) {
             jsSrc[key] = SRC+'/js/'+jsSrc[key];
         });
 
-        entry[jsDist.replace('.js', '')] = jsSrc;
         configs.push({
-            entry: entry,
+            entry: jsSrc,
             output: {
                 filename: jsDist,
                 path: DIST+'/js',
