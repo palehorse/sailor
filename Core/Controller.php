@@ -6,30 +6,44 @@ use ErrorException;
 use Sailor\Core\Loaders\HookLoader;
 use Sailor\Utility\JSend;
 use Slim\Exception\NotFoundException;
-use Symfony\Component\Config\Definition\Exception\ForbiddenOverwriteException;
+use Slim\Http\Request;
+use Slim\Http\Response;
+use Slim\Views\Twig;
 
 class Controller
 {
+	/** @var Request */
 	protected $request;
+
+	/** @var Response */
 	protected $response;
-	protected $view;
+
+	/** @var Twig */
+	protected $twig;
+
+	/** @var array */
 	protected $hookLoaders = [];
+
+	/** @var array */
 	protected $data = [];
+
+	
 	protected $getVars;
 	protected $postVars;
 	protected $logger;
 
-	public function __construct($request, $response)
+	public static function getNameSpace()
+	{
+		return __NAMESPACE__;
+	}
+
+	public function __construct(Request $request, Response $response, Twig $twig)
 	{
 		$this->request = $request;
 		$this->response = $response;
-		$this->logger = Route::getLogger();
-		$this->parseVars();
-	}
-
-	public function setView($view)
-	{
-		$this->view = $view;
+		$this->twig = $twig;
+		$this->getVars = $this->request->getQueryParams();
+		$this->postVars = $this->request->getParsedBody();
 	}
 
 	public function addHookLoader(HookLoader $HookLoader)
@@ -50,7 +64,7 @@ class Controller
 			$file .= '.php';
 		}
 
-		return $this->view->render($this->response, $file, array_merge($this->data, $data));
+		return $this->twig->render($this->response, $file, array_merge($this->data, $data));
 	}
 	
 	protected function get($name)
@@ -77,12 +91,6 @@ class Controller
 		return $_FILES;
 	}
 
-	protected function parseVars()
-	{
-		$this->getVars = $this->request->getQueryParams();
-		$this->postVars = $this->request->getParsedBody();
-	}
-
 	protected function forbidden($isJson = false)
 	{
 		$statusCode = 403;
@@ -90,14 +98,14 @@ class Controller
 		if ($isJson === true) {
 			$this->showJsonError(
 				'forbidden', 
-				'您沒有存取該內容的權限', 
+				'您沒有存取該內容的權限<br />請確認您所使用的驗證資訊是否正確', 
 				$statusCode
 			);
 		} else {
 			$this->showError(
 				$statusCode, 
 				'禁止存取', 
-				'您沒有存取內容的權限',
+				'您沒有存取該內容的權限<br />請確認您所使用的驗證資訊是否正確',
 				$isJson
 			);
 		}
@@ -118,7 +126,7 @@ class Controller
 
 	protected function showJsonError($status, $errorMessage, $errorCode = 0)
 	{
-		$this->response->write(JSend::error([
+		$this->response->withJson(JSend::error([
 			'status' => $status, 
 			'code' => $errorCode,
 			'message' => $errorMessage,

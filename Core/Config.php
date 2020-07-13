@@ -1,49 +1,37 @@
 <?php
-
 namespace Sailor\Core;
 
-use Sailor\Core\Files\ConfigFile;
-use Sailor\Core\Loaders\ConfigLoader;
-use \RuntimeException;
-
-class Config 
+class Config
 {
-	private static $path = __DIR__ . '/../config/';
-	private static $data = [];
-	public static function init()
-	{
-		$files = self::glob(self::$path);
-		foreach ($files as $file) {
-			$config = ConfigFile::create($file);
-			self::$data[$config->getName()] = ConfigLoader::create()->load($config)->getConfigData();
-		}
-	}
+	const MAX_LINE_LENGTH = 1000;
+	public static $configs = [];
 
+	/**
+	 * Return the value of Config from config files
+	 * 
+	 * @param string $key
+	 * @return mixed|null
+	 */
 	public static function get($key)
 	{
-		if (!is_string($key)) {
-			throw new RuntimeException('The key must be a string');
+		if (!preg_match('/^(\w+)\.([A-Z0-9_]+)$/', $key, $matches)) {
 			return null;
 		}
 
-		if (preg_match('/(\w+)\.(\w+)/', $key, $matches)) {
-			list($original, $name, $subName) = $matches;
-		} else {
-			$name = $key;
-		}
-		
-		if (!empty($subName)) {
-			if (isset(self::$data[$name])) {
-				return isset(self::$data[$name][$subName]) ? self::$data[$name][$subName] : null;
+		if (!isset(self::$configs[$matches[1]])) {
+			$filename = sprintf(__DIR__ . '/../config/%s.config', $matches[1]);
+			if (!file_exists($filename)) {
+				return null;
 			}
-			return null;
-		}
-		
-		return isset(self::$data[$name]) ? self::$data[$name] : null; 	
-	}
 
-	private static function glob()
-	{
-		return glob(self::$path . '{*.config}', GLOB_BRACE);
+			$fp = fopen($filename, 'r');
+
+			while ($row = fgets($fp, self::MAX_LINE_LENGTH)) {
+				list($name, $value) = explode('=', $row);
+				self::$configs[$name] = preg_match('/^([\w]+,)+([\w]+)$/', $value) ? explode(',', $value) : trim($value);
+			}
+		}
+
+		return isset(self::$configs[$matches[2]]) ? self::$configs[$matches[2]] : null;
 	}
 }
