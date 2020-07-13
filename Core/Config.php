@@ -28,7 +28,9 @@ class Config
 
 			while ($row = fgets($fp, self::MAX_LINE_LENGTH)) {
 				list($name, $value) = explode('=', $row);
-				self::$configs[$name] = preg_match('/^([\w]+,)+([\w]+)$/', $value) ? explode(',', $value) : trim($value);
+				self::$configs[$name] = preg_match('/^([\w]+,)+([\w]+)$/', $value) ? array_map(function($value) {
+					return trim($value);
+				}, explode(',', $value)) : trim($value);
 			}
 		}
 
