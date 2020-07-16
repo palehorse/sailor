@@ -4,8 +4,7 @@ namespace Sailor\Extensions\Twig;
 
 use \Twig\TwigFunction;
 use \Twig\Extension\AbstractExtension;
-use Sailor\Utility\Route;
-use Sailor\Core\Route as Router;
+use Sailor\Core\Router;
 
 class RouteExtension extends AbstractExtension
 {
@@ -19,14 +18,11 @@ class RouteExtension extends AbstractExtension
 
     public function version($url)
     {
-        return Route::version($url);
+        return Router::version($url);
     }
 
     public function pathFor($name)
     {
-        return Router::getSlimApp()
-                     ->getContainer()
-                     ->get('router')
-                     ->pathFor($name);
+        return Router::pathFor($name);
     }
 }
