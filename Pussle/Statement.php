@@ -1,5 +1,5 @@
 <?php
-namespace Pussle\ORM;
+namespace Pussle;
 
 use PDO;
 use stdClass;

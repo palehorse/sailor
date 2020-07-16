@@ -28,6 +28,7 @@ use Pussle\ORM\Language\On;
 use Pussle\ORM\Language\Select;
 use Pussle\ORM\Language\SQLStatement;
 use Pussle\ORM\Language\Update;
+use Pussle\Database;
 
 class Model
 {

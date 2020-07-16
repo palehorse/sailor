@@ -1,12 +1,12 @@
 <?php
-namespace Pussle\ORM;
+namespace Pussle;
 
 use PDO;
 use Phinx\Console\Command\Status;
 use Pussle\ORM\Language\Insert;
 use Pussle\ORM\Language\SQLStatement;
 use Sailor\Core\Config;
-use Pussle\ORM\Statement;
+use Pussle\Statement;
 
 class Database
 {
