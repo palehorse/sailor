@@ -1,0 +1,32 @@
+.top-bar {
+    background-color: #bdc1c4 !important;
+}
+
+.btn,
+.btn:visited,
+.btn:hover,
+.btn:active,
+.btn:focus {
+    color: #ffffff;
+    background-color: #b4b9bc;
+    border: none;
+}
+
+.error-message-wrapper {
+    max-width: 400px;
+    text-align: center;
+    color: #8b9093;
+    margin: 20px auto;
+    padding: 15px 20px 20px;
+    border-radius: 5px;
+    border: 1px solid #c3c9ca;
+}
+
+.error-message-wrapper .title {
+    color: #74787a;
+    margin: 12px 0;
+}
+
+.error-message-wrapper .desc {
+    margin: 30px 10px 25px;
+}

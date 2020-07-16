@@ -1,0 +1,84 @@
+body {
+    min-height: 100vh;
+}
+
+.title {
+    text-align: center;
+    margin: 12px 0 20px 0;
+}
+
+.top-bar {
+    display: block;
+    min-height: 65px;
+    padding: 15px;
+    background-color: #fabea1;
+    overflow: hidden;
+}
+
+.top-bar .top-bar-item {
+    display: inline-block;
+    float: right;
+}
+
+.sidebar-wrapper {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: -320px;
+    width: 320px;
+    padding: 8px 20px;
+    background-color: #F4F5F7;
+    z-index: 10000;
+    box-shadow: 0 12px 24px -6px rgba(9,30,66,.25), 0 0 0 1px rgba(9,30,66,.08)
+}
+
+.sidebar-wrapper .sidebar-top {
+    padding: 0;
+    width: 100%;
+    display: block;
+    overflow: hidden;
+}
+
+.sidebar-wrapper .close-sidebar {
+    display: inline-block;
+    cursor: pointer;
+    float: right;
+    margin-bottom: 0;
+}
+
+.sidebar-wrapper .bottom-line {
+    border-bottom: solid 1px #ADADAD;
+    width: 100%;
+}
+
+.sidebar-wrapper label {
+    margin-bottom: 0.2rem;
+}
+
+.sidebar-wrapper .name-wrapper .name {
+    text-align: center;
+}
+
+.sidebar-wrapper .list-wrapper {
+    margin-top: 20px;
+    padding: 10px;
+}
+
+.sidebar-wrapper .list-wrapper .list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.sidebar-wrapper .list-wrapper .list a {
+    color: #000;
+    text-decoration: none;
+}
+
+.sidebar-wrapper .list-wrapper .list li {
+    margin-bottom: 10px;
+}
+
+.sidebar-wrapper .place-type-list {
+    margin-top: 20px;
+    padding: 10px;
+}

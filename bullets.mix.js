@@ -1,9 +1,12 @@
 const bullets = require('./build/bullets');
 
-/*
-bullets.js(['app.js', 'your.js'], 'your-minified.js')
-       .css(['../../node_modules/bootstrap/dist/css/bootstrap.css', 'your.css'], 'your-minified.css');
-*/
+var commonCss = [
+    '../../node_modules/bootstrap/dist/css/bootstrap.css',
+    'common/common.css'
+];
+
+bullets.css(commonCss.concat(['error.css']), 'error.css');
+
 module.exports = (function(bullets) {
     return bullets.getConfig();
 })(bullets);
