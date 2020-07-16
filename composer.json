@@ -25,7 +25,7 @@
             "Sailor\\Controllers\\": "Controllers/",
             "Sailor\\Models\\": "Models/",
             "Sailor\\Utility\\": "Utility/",
-            "Sailor\\Middlewares\\": "Middlewares/",
+            "Sailor\\MiddleWares\\": "MiddleWares/",
             "Sailor\\Extensions\\": "Extensions/",
             "Sailor\\Services\\": "Services/",
             "Sailor\\Repository\\": "Repository/",

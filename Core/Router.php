@@ -69,6 +69,7 @@ class Router
 
     public static function group($uri, $callable)
     {
+        self::init();
         return self::$app->group($uri, $callable);
     }
 
