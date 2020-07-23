@@ -68,6 +68,8 @@ class Having implements SQLInterface
                 $name = !empty($parameter->getColumn()->getAs()) ? '`' . $parameter->getColumn()->getAs() . '`' : $parameter->getColumn()->buildStatement();
                 switch ($operator) {
                     case '=':
+                    case '>':
+                    case '<':
                     case '>=':
                     case '<=':
                     case '!=':

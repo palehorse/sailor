@@ -203,81 +203,6 @@ class Model
     }
 
     /**
-     * @param Model $model
-     */
-    public function join(Model $model, array $on=[])
-    {
-        $table = $model->getTable();
-        $select = $this->sqlStatement->getDML();
-        if (!$select instanceof Select) {
-            return;
-        }
-
-        $rightSelect = $model->getSQLStatement()->getDML();
-        if (!$rightSelect instanceof Select) {
-            return;
-        }
-
-        $columns = $rightSelect->getColumns();
-        foreach ($columns as $column) {
-            $select->addColumn($column);
-        }
-
-        $funcs = $rightSelect->getFuncs();
-        foreach ($funcs as $func) {
-            $select->addFunc($func);
-        }
-
-        $clauses = $model->getSQLStatement()->getClauses();
-        foreach ($clauses as $clause) {
-            $this->sqlStatement->addClause($clause);
-        }
-
-        if (!empty($on)) {
-            $isSingleArray = count(array_filter($on, function($row) {
-                return is_array($row);
-            })) == 0;
-
-            $on = $isSingleArray ? [$on] : $on;
-
-            $toOn = new On;
-            foreach ($on as $row) {
-                list($leftColumnName, $rightColumnName) = $row;
-                $toOn->addStatement(new Column($this->table, $leftColumnName), new Column($table, $rightColumnName));
-            }
-        }
-
-        $join = new Join($table);
-        $join->setOn($toOn);
-        $select->addJoin($join);
-
-        $rightGroup = $model->getSQLStatement()->getGroup();
-        $group = $this->sqlStatement->getGroup();
-        if (!empty($rightGroup)) {
-            if (!empty($group)) {
-                foreach ($rightGroup->getColumns() as $column) {
-                    $group->addColumn($column);
-                }
-            } else {
-                $this->sqlStatement->setGroup($rightGroup);
-            }
-        }
-
-        $rightOrder = $model->getSQLStatement()->getOrder();
-        $order = $this->sqlStatement->getOrder();
-        if (!empty($rightOrder)) {
-            if (!empty($order)) {
-                foreach ($rightOrder->getColumns() as $column) {
-                    $order->addColumn($column);
-                }
-            } else {
-                $this->sqlStatement->setOrder($rightOrder);
-            }
-        }
-
-    }
-
-    /**
      * @param array $columns
      */
     public function insert(array $columns)
@@ -296,6 +221,21 @@ class Model
                 $insert->addParameter(new Parameter(new Column($this->table, $name), '=', [$value]));
             }
         }
+    }
+
+    public function join(Model $model, $on = [])
+    {
+        $this->baseJoin($model, $on);
+    }
+
+    public function leftJoin(Model $model, $on = [])
+    {
+        $this->baseJoin($model, $on, 'LEFT');
+    }
+
+    public function rightJoin(Model $model, $on = [])
+    {
+        $this->baseJoin($model, $on, 'RIGHT');
     }
 
     /**
@@ -369,15 +309,15 @@ class Model
     public function having()
     {
         $args = func_get_args();
-        $operator = in_array(strtoupper($args[1]), ['=', '<=', '>=', '!=', '<>', 'LIKE', 'BETWEEN', 'IN', 'NOT IN']) ? strtoupper($args[1]) : '=';
-        $parameterValue = in_array(strtoupper($args[1]), ['=', '<=', '>=', '!=', '<>', 'LIKE', 'BETWEEN', 'IN', 'NOT IN']) ? $args[2] : $args[1];
+        $operator = in_array(strtoupper($args[1]), ['=', '>', '<', '<=', '>=', '!=', '<>', 'LIKE', 'BETWEEN', 'IN', 'NOT IN']) ? strtoupper($args[1]) : '=';
+        $parameterValue = in_array(strtoupper($args[1]), ['=', '>', '<', '<=', '>=', '!=', '<>', 'LIKE', 'BETWEEN', 'IN', 'NOT IN']) ? $args[2] : $args[1];
         $group = $this->sqlStatement->getGroup();
 
         if (empty($group)) {
             return;
         }
         
-        $parameter = new Parameter($args[0], $operator, is_array($parameterValue) ? $parameterValue : [$parameterValue]);
+        $parameter = new Parameter(new Column($this->table, $args[0]), $operator, is_array($parameterValue) ? $parameterValue : [$parameterValue]);
         $havings = $group->getHavings();
         if (empty($havings)) {
             $having = new Having;
@@ -490,6 +430,85 @@ class Model
         }
 
         return $insert;
+    }
+
+    /**
+     * @param Model $model
+     */
+    protected function baseJoin(Model $model, array $on=[], $relation = null)
+    {
+        $table = $model->getTable();
+        $select = $this->sqlStatement->getDML();
+        if (!$select instanceof Select) {
+            return;
+        }
+
+        $rightSelect = $model->getSQLStatement()->getDML();
+        if (!$rightSelect instanceof Select) {
+            return;
+        }
+
+        $columns = $rightSelect->getColumns();
+        foreach ($columns as $column) {
+            $select->addColumn($column);
+        }
+
+        $funcs = $rightSelect->getFuncs();
+        foreach ($funcs as $func) {
+            $select->addFunc($func);
+        }
+
+        $clauses = $model->getSQLStatement()->getClauses();
+        foreach ($clauses as $clause) {
+            $this->sqlStatement->addClause($clause);
+        }
+
+        if (!empty($on)) {
+            $isSingleArray = count(array_filter($on, function($row) {
+                return is_array($row);
+            })) == 0;
+
+            $on = $isSingleArray ? [$on] : $on;
+
+            $toOn = new On;
+            foreach ($on as $row) {
+                list($leftColumnName, $rightColumnName) = $row;
+                $toOn->addStatement(new Column($this->table, $leftColumnName), new Column($table, $rightColumnName));
+            }
+        }
+
+        $join = new Join($table);
+        if (!empty($relation)) {
+            $join->setRelation($relation);
+        }
+
+        $join->setOn($toOn);
+        $select->addJoin($join);
+
+        $rightGroup = $model->getSQLStatement()->getGroup();
+        $group = $this->sqlStatement->getGroup();
+        if (!empty($rightGroup)) {
+            if (!empty($group)) {
+                foreach ($rightGroup->getColumns() as $column) {
+                    $group->addColumn($column);
+                }
+            } else {
+                $this->sqlStatement->setGroup($rightGroup);
+            }
+        }
+
+        $rightOrder = $model->getSQLStatement()->getOrder();
+        $order = $this->sqlStatement->getOrder();
+        if (!empty($rightOrder)) {
+            if (!empty($order)) {
+                foreach ($rightOrder->getColumns() as $column) {
+                    $order->addColumn($column);
+                }
+            } else {
+                $this->sqlStatement->setOrder($rightOrder);
+            }
+        }
+
     }
 
     /**
