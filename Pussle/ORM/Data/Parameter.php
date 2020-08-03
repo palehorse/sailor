@@ -66,7 +66,7 @@ class Parameter implements SQLInterface
         }
 
         if (is_null($key)) {
-            return array_shift($this->values);
+            return $this->values[0];
         }
 
         if (!isset($this->values[$key])) {

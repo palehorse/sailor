@@ -21,6 +21,7 @@ class Database
 
         $parameterValues = [];   
         $dml = $sqlStatement->getDML();
+
         if (method_exists($dml, 'getParameters')) {
             if ($dml instanceof Insert) {
                 $params = $dml->getParameters();
@@ -38,10 +39,17 @@ class Database
 
         foreach ($sqlStatement->getClauses() as $clause) {
             $parameterValues = array_merge($parameterValues, array_reduce($clause->getParameters(), function($values, $parameter) {
-                return array_merge(!empty($values) ? $values : [], $parameter->getValues());
-            }));
-        }
+                $parameters = array_reduce($parameter->getValues(), function($parameters, $value) {
+                    if (!is_null($value)) {
+                        $parameters[] = $value;
+                    }
 
+                    return $parameters;
+                }, []);
+                return array_merge($values, $parameters);
+            }, []));
+        }
+        
         $group = $sqlStatement->getGroup();
         if (!empty($group) && !empty($group->getHavings())) {
             foreach ($group->getHavings() as $having) {

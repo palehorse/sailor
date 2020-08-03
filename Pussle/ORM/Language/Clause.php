@@ -67,10 +67,24 @@ class Clause implements SQLInterface
                 $operator = $parameter->getOperator();
                 switch ($operator) {
                     case '=':
-                    case '>=':
-                    case '<=':
+                        if (is_null($parameter->getValue())) {
+                            $statement = $parameter->buildStatement() . ' IS NULL';
+                        } else {
+                            $statement = $parameter->buildStatement() . $operator . '?';
+                        }
+
+                        break;
                     case '!=':
                     case '<>':
+                        if (is_null($parameter->getValue())) {
+                            $statement = $parameter->buildStatement() . ' IS NOT NULL';
+                        } else {
+                            $statement = $parameter->buildStatement() . $operator . '?';
+                        }
+
+                        break;
+                    case '>=':
+                    case '<=':
                         $statement = $parameter->buildStatement() . $operator . '?';
                         break;
                     case 'LIKE':
