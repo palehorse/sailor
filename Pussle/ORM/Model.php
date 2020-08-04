@@ -393,8 +393,10 @@ class Model
     {
         $dml = $this->sqlStatement->getDML();
         if (!empty($dml)) {
-            Database::execute($this->sqlStatement);
+            $stmt = Database::execute($this->sqlStatement);
         }
+
+        return $stmt->rowCount();
     }
 
     public function lastInsertId()

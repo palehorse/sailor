@@ -47,6 +47,15 @@ class Statement
         return $this->toStdClass($data);
     }
 
+    public function rowCount()
+    {
+        if (empty($this->stmt)) {
+            return [];
+        }
+
+        return $this->stmt->rowCount();
+    }
+
     private function toStdClass(array $data)
     {
         $isSingleDimensionArray = empty(array_filter($data, function($item) {
