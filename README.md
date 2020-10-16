@@ -152,3 +152,49 @@ class TestContrller extends Contrller
 } 
 ```
 
+### 前端程式壓縮與合併
+
+#### 在 bullets.mix.js 中設定好要壓縮與合併的 CSS 和 JavaScript
+
+```javascript
+const bullets = require('./build/bullets');
+
+/** 共用的檔案 */
+var commonCss = [
+    '../../node_modules/bootstrap/dist/css/bootstrap.css', 
+    'common.css',
+    'dialog.css',
+    'switch.css',
+    '../../node_modules/bootstrap-select/dist/css/bootstrap-select.min.css'
+];
+
+/** 欲合併的檔案 */
+bullets.js(['app.js', 'signin/signin.js'], 'signin.js') 
+       .js(['app.js', '../../node_modules/drag2upload/drag2upload.jquery.js', 'member.js'], 'member.js')
+       .css(commonCss.concat(['signin.css']), 'signin.css')
+       .css(commonCss.concat(['error.css']) , 'error.css')
+       .css(commonCss.concat(['member.css']) , 'member.css');
+
+module.exports = (function(bullets) {
+    return bullets.getConfig();
+})(bullets);
+```
+
+#### 設定完成後，使用 npm 進行壓縮與合併
+
+```bash
+npm run prod
+```
+
+以上述的 app.js 和 signin/signin.js 合併為例，新產生的壓縮合併檔案為 signin.js，位於 public/js 之下，在 HTML 中僅需加入：
+
+```html
+<script src="/js/signin.js"></script>
+```
+
+或是加入編號避免 JS 和 CSS 的檔案暫存：
+
+```php+HTML
+<script src="{{version('/js/signin.js')}}"></script>
+```
+
