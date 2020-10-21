@@ -19,12 +19,6 @@
         "symfony/console": "^3.4",
         "phpmailer/phpmailer": "^6.0"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/palehorse/sailor" 
-        }
-    ],
     "autoload": {
     	"psr-4": {
     		"Sailor\\Core\\": "Core/",
