@@ -9,7 +9,7 @@
             "email": "robbie1985216@gmail.com"
         }
     ],
-    "minimum-stability": "dev-master",
+    "minimum-stability": "dev",
     "require": {
         "php": ">=5.6",
         "slim/slim": "^3.12",
