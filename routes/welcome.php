@@ -1,8 +1,8 @@
 <?php
 
-use Sailor\Core\Route;
+use Sailor\Core\Router;
 use Slim\App;
 
-Route::get('/', function() {
+Router::get('/', function() {
 	echo 'Welcome';
 });
