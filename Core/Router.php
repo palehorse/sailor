@@ -164,11 +164,19 @@ class Router
                 return call_user_func_array($callable, array_merge([$request, $response], $args));
             }
 
-            if (!preg_match('/(\w+)::(\w+)/', $callable, $matches)) {
+            if (!preg_match('/::[\w_]+$/', $callable)) {
                 return null;
             }
 
-            list($controllerName, $controllerMethod) = array_slice($matches, 1, 2);
+            list($controllerName, $controllerMethod) = explode('::', $callable, 2);
+
+            $segments = array_filter(explode('\\', $controllerName), function($segment) {
+                return preg_match('/^[\w_]+$/', $segment);
+            });
+
+            if (count($segments) != count(explode('\\', $controllerName))) {
+                return null;
+            }
 
             return self::executeControllerMethod(
                 (new ControllerBuilder(
