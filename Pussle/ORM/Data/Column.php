@@ -18,10 +18,11 @@ class Column implements ColumnInterface
     /** @var string */
     protected $alias;
 
-    public function __construct(Table $table, $name)
+    public function __construct(Table $table, $name, $alias='')
     {
         $this->table = $table;
         $this->name = $name;
+        $this->alias = $alias;
     }
 
     public function buildStatement()
