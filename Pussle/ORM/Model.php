@@ -196,7 +196,12 @@ class Model
     {
         $select = new Select($this->table);
         foreach ($columnNames as $columnName) {
-            $select->addColumn(new Column($this->table, $columnName));
+            if (strpos($columnName, ' as ') !== false) {
+                list($originColumnName, $aliasColumnName) = explode(' as ', $columnName, 2);
+                $select->addColumn(new Column($this->table, $originColumnName, $aliasColumnName));
+            } else {
+                $select->addColumn(new Column($this->table, $columnName));
+            }
         }
 
         $this->sqlStatement->setDML($select);
