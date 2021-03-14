@@ -412,7 +412,8 @@ class Model
     public function delete()
     {
         $this->sqlStatement->setDML(new Delete($this->table));
-        Database::execute($this->sqlStatement);
+        $stmt = Database::execute($this->sqlStatement);
+        return $stmt->rowCount();
     }
 
     protected function getSelect()
